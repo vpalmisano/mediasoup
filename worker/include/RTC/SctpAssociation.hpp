@@ -131,6 +131,7 @@ namespace RTC
 		uint16_t desiredOs{ 0u };
 		size_t messageBufferLen{ 0u };
 		uint16_t lastSsnReceived{ 0u }; // Valid for us since no SCTP I-DATA support.
+		bool isSending{ false }; // TMP.
 	};
 } // namespace RTC
 

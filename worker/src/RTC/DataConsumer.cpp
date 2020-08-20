@@ -279,6 +279,10 @@ namespace RTC
 
 			data["bufferedAmount"] = this->bufferedAmount;
 
+			MS_WARN_TAG(
+			  message,
+			  "emitting bufferedamountlow, amount:%" PRIu32, this->bufferedAmount);
+
 			Channel::Notifier::Emit(this->id, "bufferedamountlow", data);
 		}
 	}
@@ -318,6 +322,10 @@ namespace RTC
 
 		this->messagesSent++;
 		this->bytesSent += len;
+
+		MS_WARN_TAG(
+		  message,
+		  "sending message of size: %zu", len);
 
 		this->listener->OnDataConsumerSendMessage(this, ppid, msg, len, cb);
 	}

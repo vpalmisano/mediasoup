@@ -425,8 +425,10 @@ namespace RTC
 			}
 		}
 
+		this->isSending = true;
 		int ret = usrsctp_sendv(
 		  this->socket, msg, len, nullptr, 0, &spa, static_cast<socklen_t>(sizeof(spa)), SCTP_SENDV_SPA, 0);
+		this->isSending = false;
 
 		if (ret > 0)
 		{
@@ -1036,6 +1038,12 @@ namespace RTC
 
 	void SctpAssociation::OnUsrSctpSentData(uint32_t freeBuffer)
 	{
+		if (this->isSending)
+		{
+			MS_WARN_TAG(
+			  sctp, "freeBuffer announced while sending...");
+		}
+
 		auto previousSctpBufferedAmount = this->sctpBufferedAmount;
 
 		this->sctpBufferedAmount = this->sctpSendBufferSize - freeBuffer;
