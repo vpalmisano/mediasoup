@@ -115,12 +115,12 @@ namespace RTC
 		try
 		{
 			// This may throw.
-			this->udpSocket = new RTC::UdpSocket(this, this->listenIp.ip);
+			this->udpSocket = new RTC::UdpSocket(this, this->listenIp.ip, true);
 
 			if (!this->rtcpMux)
 			{
 				// This may throw.
-				this->rtcpUdpSocket = new RTC::UdpSocket(this, this->listenIp.ip);
+				this->rtcpUdpSocket = new RTC::UdpSocket(this, this->listenIp.ip, true);
 			}
 		}
 		catch (const MediaSoupError& error)

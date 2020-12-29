@@ -52,6 +52,8 @@ void Settings::SetConfiguration(int argc, char* argv[])
 		{ "logTags",             optional_argument, nullptr, 't' },
 		{ "rtcMinPort",          optional_argument, nullptr, 'm' },
 		{ "rtcMaxPort",          optional_argument, nullptr, 'M' },
+		{ "plainMinPort",        optional_argument, nullptr, 'n' },
+		{ "plainMaxPort",        optional_argument, nullptr, 'N' },
 		{ "dtlsCertificateFile", optional_argument, nullptr, 'c' },
 		{ "dtlsPrivateKeyFile",  optional_argument, nullptr, 'p' },
 		{ nullptr, 0, nullptr, 0 }
@@ -114,6 +116,34 @@ void Settings::SetConfiguration(int argc, char* argv[])
 				break;
 			}
 
+			case 'n':
+			{
+				try
+				{
+					Settings::configuration.plainMinPort = static_cast<uint16_t>(std::stoi(optarg));
+				}
+				catch (const std::exception& error)
+				{
+					MS_THROW_TYPE_ERROR("%s", error.what());
+				}
+
+				break;
+			}
+
+			case 'N':
+			{
+				try
+				{
+					Settings::configuration.plainMaxPort = static_cast<uint16_t>(std::stoi(optarg));
+				}
+				catch (const std::exception& error)
+				{
+					MS_THROW_TYPE_ERROR("%s", error.what());
+				}
+
+				break;
+			}
+
 			case 'c':
 			{
 				stringValue                                 = std::string(optarg);
@@ -162,6 +192,19 @@ void Settings::SetConfiguration(int argc, char* argv[])
 	// Validate RTC ports.
 	if (Settings::configuration.rtcMaxPort < Settings::configuration.rtcMinPort)
 		MS_THROW_TYPE_ERROR("rtcMaxPort cannot be less than rtcMinPort");
+
+	// Validate plain ports.
+	if (Settings::configuration.plainMaxPort > 0 && Settings::configuration.plainMinPort > 0) 
+	{
+		if (Settings::configuration.plainMaxPort < Settings::configuration.plainMinPort)
+			MS_THROW_TYPE_ERROR("plainMaxPort cannot be less than plainMinPort");
+
+		if (Settings::configuration.plainMinPort >= Settings::configuration.rtcMinPort && Settings::configuration.plainMinPort <= Settings::configuration.rtcMaxPort)
+			MS_THROW_TYPE_ERROR("plainMinPort cannot be greater or equal than rtcMinPort and less or equal to rtcMaxPort");
+
+		if (Settings::configuration.plainMaxPort <= Settings::configuration.rtcMaxPort && Settings::configuration.plainMaxPort >= Settings::configuration.rtcMinPort)
+			MS_THROW_TYPE_ERROR("plainMaxPort cannot be less or equal than rtcMaxPort and greater or equal to rtcMinPort");
+	}
 
 	// Set DTLS certificate files (if provided),
 	Settings::SetDtlsCertificateAndPrivateKeyFiles();
@@ -217,6 +260,8 @@ void Settings::PrintConfiguration()
 	MS_DEBUG_TAG(info, "  logTags             : %s", logTagsStream.str().c_str());
 	MS_DEBUG_TAG(info, "  rtcMinPort          : %" PRIu16, Settings::configuration.rtcMinPort);
 	MS_DEBUG_TAG(info, "  rtcMaxPort          : %" PRIu16, Settings::configuration.rtcMaxPort);
+	MS_DEBUG_TAG(info, "  plainMinPort          : %" PRIu16, Settings::configuration.plainMinPort);
+	MS_DEBUG_TAG(info, "  plainMaxPort          : %" PRIu16, Settings::configuration.plainMaxPort);
 	if (!Settings::configuration.dtlsCertificateFile.empty())
 	{
 		MS_DEBUG_TAG(

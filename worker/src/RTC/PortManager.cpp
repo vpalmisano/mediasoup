@@ -31,7 +31,7 @@ namespace RTC
 
 	/* Class methods. */
 
-	uv_handle_t* PortManager::Bind(Transport transport, std::string& ip)
+	uv_handle_t* PortManager::Bind(Transport transport, std::string& ip, bool plain)
 	{
 		MS_TRACE();
 
@@ -42,8 +42,11 @@ namespace RTC
 		int family = Utils::IP::GetFamily(ip);
 		struct sockaddr_storage bindAddr; // NOLINT(cppcoreguidelines-pro-type-member-init)
 		size_t portIdx;
+		size_t portIdxOffset;
 		int flags{ 0 };
 		std::vector<bool>& ports = PortManager::GetPorts(transport, ip);
+		size_t rtcPortsLength;
+		size_t plainPortsLength{ 0u };
 		size_t attempt{ 0u };
 		size_t numAttempts = ports.size();
 		uv_handle_t* uvHandle{ nullptr };
@@ -93,10 +96,29 @@ namespace RTC
 			}
 		}
 
-		// Choose a random port index to start from.
-		portIdx = static_cast<size_t>(Utils::Crypto::GetRandomUInt(
-		  static_cast<uint32_t>(0), static_cast<uint32_t>(ports.size() - 1)));
+		// If a plain ports range is defined, set the length of the ports array devoted to plain ports allocations.
+		if (Settings::configuration.plainMinPort > 0 && Settings::configuration.plainMaxPort > 0)
+			plainPortsLength = Settings::configuration.plainMaxPort - Settings::configuration.plainMinPort; 
 
+		// Set the available ports length.
+		rtcPortsLength = ports.size() - plainPortsLength;
+
+		// Choose a random port index to start from.
+		if (plain && plainPortsLength)
+		{
+			portIdx = static_cast<size_t>(Utils::Crypto::GetRandomUInt(
+		  	  static_cast<uint32_t>(0), static_cast<uint32_t>(plainPortsLength - 1)));
+			
+			portIdxOffset = rtcPortsLength;
+		}
+		else
+		{
+			portIdx = static_cast<size_t>(Utils::Crypto::GetRandomUInt(
+		  	  static_cast<uint32_t>(0), static_cast<uint32_t>(rtcPortsLength - 1)));
+
+			portIdxOffset = 0;
+		}
+		
 		// Iterate all ports until getting one available. Fail if none found and also
 		// if bind() fails N times in theorically available ports.
 		while (true)
@@ -114,12 +136,23 @@ namespace RTC
 				  numAttempts);
 			}
 
-			// Increase current port index.
-			portIdx = (portIdx + 1) % ports.size();
+			if (plain && plainPortsLength)
+			{
+				// Increase current port index.
+				portIdx = (portIdx + 1) %plainPortsLength;
 
-			// So the corresponding port is the vector position plus the RTC minimum port.
-			port = static_cast<uint16_t>(portIdx + Settings::configuration.rtcMinPort);
+				// So the corresponding port is the vector position plus the plain minimum port.
+				port = static_cast<uint16_t>(portIdx + Settings::configuration.plainMinPort);
+			}
+			else
+			{
+				// Increase current port index.
+				portIdx = (portIdx + 1) %rtcPortsLength;
 
+				// So the corresponding port is the vector position plus the RTC minimum port.
+				port = static_cast<uint16_t>(portIdx + Settings::configuration.rtcMinPort);
+			}
+			
 			MS_DEBUG_DEV(
 			  "testing port [transport:%s, ip:'%s', port:%" PRIu16 ", attempt:%zu/%zu]",
 			  transportStr.c_str(),
@@ -129,7 +162,7 @@ namespace RTC
 			  numAttempts);
 
 			// Check whether this port is not available.
-			if (ports[portIdx])
+			if (ports[portIdx + portIdxOffset])
 			{
 				MS_DEBUG_DEV(
 				  "port in use, trying again [transport:%s, ip:'%s', port:%" PRIu16 ", attempt:%zu/%zu]",
@@ -301,7 +334,7 @@ namespace RTC
 		}
 
 		// If here, we got an available port. Mark it as unavailable.
-		ports[portIdx] = true;
+		ports[portIdx + portIdxOffset] = true;
 
 		MS_DEBUG_DEV(
 		  "bind succeeded [transport:%s, ip:'%s', port:%" PRIu16 ", attempt:%zu/%zu]",
@@ -314,20 +347,43 @@ namespace RTC
 		return static_cast<uv_handle_t*>(uvHandle);
 	}
 
-	void PortManager::Unbind(Transport transport, std::string& ip, uint16_t port)
+	void PortManager::Unbind(Transport transport, std::string& ip, uint16_t port, bool plain)
 	{
 		MS_TRACE();
+		
+		size_t plainPortsLength{ 0u };
 
-		if (
-		  (static_cast<size_t>(port) < Settings::configuration.rtcMinPort) ||
-		  (static_cast<size_t>(port) > Settings::configuration.rtcMaxPort))
+		// If a plain ports range is defined, set the length of the ports array devoted to plain ports allocations.
+		if (Settings::configuration.plainMinPort > 0 && Settings::configuration.plainMaxPort > 0)
+			plainPortsLength = Settings::configuration.plainMaxPort - Settings::configuration.plainMinPort; 
+
+		if (plain && plainPortsLength) {
+			if (
+			  (static_cast<size_t>(port) < Settings::configuration.plainMinPort) ||
+			  (static_cast<size_t>(port) > Settings::configuration.plainMaxPort))
+			{
+				MS_ERROR("given port %" PRIu16 " is out of plain ports range", port);
+
+				return;
+			}
+		}
+		else 
 		{
-			MS_ERROR("given port %" PRIu16 " is out of range", port);
+			if (
+			  (static_cast<size_t>(port) < Settings::configuration.rtcMinPort) ||
+			  (static_cast<size_t>(port) > Settings::configuration.rtcMaxPort))
+			{
+				MS_ERROR("given port %" PRIu16 " is out of range", port);
 
-			return;
+				return;
+			}			
 		}
 
-		size_t portIdx = static_cast<size_t>(port) - Settings::configuration.rtcMinPort;
+		size_t portIdx;
+		if (plain && plainPortsLength)
+			portIdx = static_cast<size_t>(port) - Settings::configuration.plainMinPort;
+		else
+			portIdx = static_cast<size_t>(port) - Settings::configuration.rtcMinPort;
 
 		switch (transport)
 		{
@@ -340,8 +396,14 @@ namespace RTC
 
 				auto& ports = it->second;
 
+				// Set the available ports length.
+				size_t rtcPortsLength = ports.size() - plainPortsLength;
+
 				// Mark the port as available.
-				ports[portIdx] = false;
+				if (plain && plainPortsLength)
+					ports[portIdx + rtcPortsLength] = false;
+				else
+					ports[portIdx] = false;
 
 				break;
 			}
@@ -355,8 +417,14 @@ namespace RTC
 
 				auto& ports = it->second;
 
+				// Set the available ports length.
+				size_t rtcPortsLength = ports.size() - plainPortsLength;
+
 				// Mark the port as available.
-				ports[portIdx] = false;
+				if (plain && plainPortsLength)
+					ports[portIdx + rtcPortsLength] = false;
+				else
+					ports[portIdx] = false;
 
 				break;
 			}
@@ -389,6 +457,9 @@ namespace RTC
 				uint16_t numPorts =
 				  Settings::configuration.rtcMaxPort - Settings::configuration.rtcMinPort + 1;
 
+				if (Settings::configuration.plainMinPort > 0 && Settings::configuration.plainMaxPort > 0)
+					numPorts += Settings::configuration.plainMaxPort - Settings::configuration.plainMinPort + 1;
+
 				// Emplace a new vector filled with numPorts false values, meaning that
 				// all ports are available.
 				auto pair = PortManager::mapUdpIpPorts.emplace(
@@ -415,6 +486,9 @@ namespace RTC
 				// Otherwise add an entry in the map and return it.
 				uint16_t numPorts =
 				  Settings::configuration.rtcMaxPort - Settings::configuration.rtcMinPort + 1;
+				
+				if (Settings::configuration.plainMinPort > 0 && Settings::configuration.plainMaxPort > 0)
+					numPorts += Settings::configuration.plainMaxPort - Settings::configuration.plainMinPort + 1;
 
 				// Emplace a new vector filled with numPorts false values, meaning that
 				// all ports are available.
@@ -435,6 +509,12 @@ namespace RTC
 	{
 		MS_TRACE();
 
+		size_t plainPortsLength{ 0u };
+
+		// Set the available ports length.
+		if (Settings::configuration.plainMinPort > 0 && Settings::configuration.plainMaxPort > 0)
+			plainPortsLength = Settings::configuration.plainMaxPort - Settings::configuration.plainMinPort;
+
 		// Add udp.
 		jsonObject["udp"] = json::object();
 		auto jsonUdpIt    = jsonObject.find("udp");
@@ -446,13 +526,23 @@ namespace RTC
 
 			(*jsonUdpIt)[ip] = json::array();
 			auto jsonIpIt    = jsonUdpIt->find(ip);
+		
+			size_t rtcPortsLength = ports.size() - plainPortsLength;
 
 			for (size_t i{ 0 }; i < ports.size(); ++i)
 			{
 				if (!ports[i])
 					continue;
 
-				auto port = static_cast<uint16_t>(i + Settings::configuration.rtcMinPort);
+				uint16_t port;
+
+				// Note: if a plain ports range is defined, the rtcPortsLength is < ports.size()
+				if (i >= rtcPortsLength)
+					// When the iteration reaches the rtcPortsLength index, we have a plain port allocation:
+					port = static_cast<uint16_t>(i + Settings::configuration.plainMinPort);
+				else
+					// else, use the rtcMinPort value.
+					port = static_cast<uint16_t>(i + Settings::configuration.rtcMinPort);
 
 				jsonIpIt->push_back(port);
 			}
@@ -470,12 +560,22 @@ namespace RTC
 			(*jsonTcpIt)[ip] = json::array();
 			auto jsonIpIt    = jsonTcpIt->find(ip);
 
+			size_t rtcPortsLength = ports.size() - plainPortsLength;
+
 			for (size_t i{ 0 }; i < ports.size(); ++i)
 			{
 				if (!ports[i])
 					continue;
 
-				auto port = static_cast<uint16_t>(i + Settings::configuration.rtcMinPort);
+				uint16_t port;
+
+				// Note: if a plain ports range is defined, the rtcPortsLength is < ports.size()
+				if (i >= rtcPortsLength)
+					// When the iteration reaches the rtcPortsLength index, we have a plain port allocation:
+					port = static_cast<uint16_t>(i + Settings::configuration.plainMinPort);
+				else
+					// else, use the rtcMinPort value.
+					port = static_cast<uint16_t>(i + Settings::configuration.rtcMinPort);
 
 				jsonIpIt->emplace_back(port);
 			}

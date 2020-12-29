@@ -10,9 +10,9 @@ namespace RTC
 {
 	/* Instance methods. */
 
-	UdpSocket::UdpSocket(Listener* listener, std::string& ip)
+	UdpSocket::UdpSocket(Listener* listener, std::string& ip, bool plain)
 	  : // This may throw.
-	    ::UdpSocket::UdpSocket(PortManager::BindUdp(ip)), listener(listener)
+	    ::UdpSocket::UdpSocket(PortManager::BindUdp(ip, plain)), listener(listener), plain(plain)
 	{
 		MS_TRACE();
 	}
@@ -21,7 +21,7 @@ namespace RTC
 	{
 		MS_TRACE();
 
-		PortManager::UnbindUdp(this->localIp, this->localPort);
+		PortManager::UnbindUdp(this->localIp, this->localPort, this->plain);
 	}
 
 	void UdpSocket::UserOnUdpDatagramReceived(const uint8_t* data, size_t len, const struct sockaddr* addr)

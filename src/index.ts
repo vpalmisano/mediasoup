@@ -40,6 +40,8 @@ export async function createWorker(
 		logTags,
 		rtcMinPort = 10000,
 		rtcMaxPort = 59999,
+		plainMinPort = 0,
+		plainMaxPort = 0,
 		dtlsCertificateFile,
 		dtlsPrivateKeyFile,
 		appData = {}
@@ -57,6 +59,8 @@ export async function createWorker(
 			logTags,
 			rtcMinPort,
 			rtcMaxPort,
+			plainMinPort,
+			plainMaxPort,
 			dtlsCertificateFile,
 			dtlsPrivateKeyFile,
 			appData

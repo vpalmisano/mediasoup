@@ -52,6 +52,16 @@ export type WorkerSettings =
 	rtcMaxPort?: number;
 
 	/**
+	 * Minimun RTC port for plain transports. Default 10000.
+	 */
+	plainMinPort?: number;
+
+	/**
+	 * Maximum RTC port for plain transports. Default 59999.
+	 */
+	plainMaxPort?: number;
+
+	/**
 	 * Path to the DTLS public certificate file in PEM format. If unset, a
 	 * certificate is dynamically created.
 	 */
@@ -214,6 +224,8 @@ export class Worker extends EnhancedEventEmitter
 			logTags,
 			rtcMinPort,
 			rtcMaxPort,
+			plainMinPort,
+			plainMaxPort,
 			dtlsCertificateFile,
 			dtlsPrivateKeyFile,
 			appData
@@ -252,6 +264,12 @@ export class Worker extends EnhancedEventEmitter
 
 		if (typeof rtcMaxPort === 'number' && !Number.isNaN(rtcMaxPort))
 			spawnArgs.push(`--rtcMaxPort=${rtcMaxPort}`);
+
+		if (typeof plainMinPort === 'number' && !Number.isNaN(plainMinPort))
+			spawnArgs.push(`--plainMinPort=${plainMinPort}`);
+
+		if (typeof plainMaxPort === 'number' && !Number.isNaN(plainMaxPort))
+			spawnArgs.push(`--plainMaxPort=${plainMaxPort}`);
 
 		if (typeof dtlsCertificateFile === 'string' && dtlsCertificateFile)
 			spawnArgs.push(`--dtlsCertificateFile=${dtlsCertificateFile}`);

@@ -21,27 +21,27 @@ namespace RTC
 		};
 
 	public:
-		static uv_udp_t* BindUdp(std::string& ip)
+		static uv_udp_t* BindUdp(std::string& ip, bool plain = false)
 		{
-			return reinterpret_cast<uv_udp_t*>(Bind(Transport::UDP, ip));
+			return reinterpret_cast<uv_udp_t*>(Bind(Transport::UDP, ip, plain));
 		}
-		static uv_tcp_t* BindTcp(std::string& ip)
+		static uv_tcp_t* BindTcp(std::string& ip, bool plain = false)
 		{
-			return reinterpret_cast<uv_tcp_t*>(Bind(Transport::TCP, ip));
+			return reinterpret_cast<uv_tcp_t*>(Bind(Transport::TCP, ip, plain));
 		}
-		static void UnbindUdp(std::string& ip, uint16_t port)
+		static void UnbindUdp(std::string& ip, uint16_t port, bool plain = false)
 		{
-			return Unbind(Transport::UDP, ip, port);
+			return Unbind(Transport::UDP, ip, port, plain);
 		}
-		static void UnbindTcp(std::string& ip, uint16_t port)
+		static void UnbindTcp(std::string& ip, uint16_t port, bool plain = false)
 		{
-			return Unbind(Transport::TCP, ip, port);
+			return Unbind(Transport::TCP, ip, port, plain);
 		}
 		static void FillJson(json& jsonObject);
 
 	private:
-		static uv_handle_t* Bind(Transport transport, std::string& ip);
-		static void Unbind(Transport transport, std::string& ip, uint16_t port);
+		static uv_handle_t* Bind(Transport transport, std::string& ip, bool plain = false);
+		static void Unbind(Transport transport, std::string& ip, uint16_t port, bool plain = false);
 		static std::vector<bool>& GetPorts(Transport transport, const std::string& ip);
 
 	private:
