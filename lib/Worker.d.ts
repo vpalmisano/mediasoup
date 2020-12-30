@@ -23,6 +23,14 @@ export declare type WorkerSettings = {
      */
     rtcMaxPort?: number;
     /**
+     * Minimun RTC port for plain transports. Default 10000.
+     */
+    plainMinPort?: number;
+    /**
+     * Maximum RTC port for plain transports. Default 59999.
+     */
+    plainMaxPort?: number;
+    /**
      * Path to the DTLS public certificate file in PEM format. If unset, a
      * certificate is dynamically created.
      */
@@ -125,7 +133,7 @@ export declare class Worker extends EnhancedEventEmitter {
      * @emits @success
      * @emits @failure - (error: Error)
      */
-    constructor({ logLevel, logTags, rtcMinPort, rtcMaxPort, dtlsCertificateFile, dtlsPrivateKeyFile, appData }: WorkerSettings);
+    constructor({ logLevel, logTags, rtcMinPort, rtcMaxPort, plainMinPort, plainMaxPort, dtlsCertificateFile, dtlsPrivateKeyFile, appData }: WorkerSettings);
     /**
      * Worker process identifier (PID).
      */
