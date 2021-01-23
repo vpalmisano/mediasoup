@@ -58,6 +58,7 @@ namespace RTC
 			// Video codecs:
 			VP8 = 200,
 			VP9,
+			AV1X,
 			H264,
 			X_H264UC,
 			H265,
