@@ -4,7 +4,34 @@
 #include "RTC/Codecs/AV1X.hpp"
 #include "Logger.hpp"
 
-// WIP
+/* uint32_t decodeLeb128(uint8_t* data, uint32_t size) {
+	size_t result{ 0 };
+	size_t shift{ 0 };
+	size_t offset{ 0 };
+	while (offset < size) {
+		uint8_t byte = data[offset];
+		result |= (byte & 0x7f) << shift;
+		shift += 7;
+		offset += 1;
+		if ((0x80 & byte) == 0) {
+			return result;
+		}
+	}
+	return result;
+} */
+
+enum ObuTypes {
+	OBU_SEQUENCE_HEADER = 1,
+	OBU_TEMPORAL_DELIMITER,
+	OBU_FRAME_HEADER,
+	OBU_TILE_GROUP,
+	OBU_METADATA,
+	OBU_FRAME,
+	OBU_REDUNDANT_FRAME_HEADER,
+	OBU_TILE_LIST,
+	OBU_PADDING = 15
+};
+
 namespace RTC
 {
 	namespace Codecs
@@ -27,7 +54,72 @@ namespace RTC
 			size_t offset{ 0 };
 			uint8_t byte = data[offset];
 
-			payloadDescriptor->i = (byte >> 7) & 0x01;
+			payloadDescriptor->z = (byte >> 7) & 0x01;
+			payloadDescriptor->y = (byte >> 6) & 0x01;
+			payloadDescriptor->w = (byte >> 4) & 0x03;
+			payloadDescriptor->n = (byte >> 3) & 0x01;
+
+			if (payloadDescriptor->z == 1)
+			{
+				return payloadDescriptor.release();
+			}
+
+			// https://aomediacodec.github.io/av1-spec/av1-spec.pdf 5.3.1
+			if (payloadDescriptor->n)
+			{
+				/* MS_WARN_TAG(rtp, "z=%u y=%u w=%u n=%u", 
+					payloadDescriptor->z, payloadDescriptor->y, payloadDescriptor->w, payloadDescriptor->n
+				); */
+				payloadDescriptor->isKeyFrame = true;
+			}
+
+			//
+			if (payloadDescriptor->w) {
+				offset += 1;
+			} else {
+				//
+			}
+
+			byte = data[offset];
+
+			// 5.3.2.
+			payloadDescriptor->obu_type = (byte >> 3) & 0x0F;
+			payloadDescriptor->obu_extension_flag = (byte >> 2) & 0x01;
+			payloadDescriptor->obu_has_size_field = (byte >> 1) & 0x01;
+			
+			// 5.3.3
+			if (payloadDescriptor->obu_extension_flag)
+			{
+				offset += 1;
+				byte = data[offset];
+
+				payloadDescriptor->temporal_id = (byte >> 5) & 0x07;
+				payloadDescriptor->spatial_id = (byte >> 3) & 0x03;
+			}
+
+			/* MS_WARN_TAG(rtp, "z=%u y=%u w=%u n=%u | obu_type=%u obu_extension_flag=%u obu_has_size_field=%u temporal_id=%u spatial_id=%u", 
+				payloadDescriptor->z, payloadDescriptor->y, payloadDescriptor->w, payloadDescriptor->n,
+				payloadDescriptor->obu_type, payloadDescriptor->obu_extension_flag, payloadDescriptor->obu_has_size_field,
+				payloadDescriptor->temporal_id, payloadDescriptor->spatial_id
+			); */
+
+			if (
+				payloadDescriptor->obu_type != OBU_SEQUENCE_HEADER &&
+				payloadDescriptor->obu_type != OBU_TEMPORAL_DELIMITER &&
+				payloadDescriptor->obu_extension_flag
+			) 
+			{
+				
+			}
+
+			// 5.5.1.
+			if (payloadDescriptor->obu_type == OBU_SEQUENCE_HEADER)
+			{
+				
+
+			}
+
+			/* payloadDescriptor->i = (byte >> 7) & 0x01;
 			payloadDescriptor->p = (byte >> 6) & 0x01;
 			payloadDescriptor->l = (byte >> 5) & 0x01;
 			payloadDescriptor->f = (byte >> 4) & 0x01;
@@ -94,7 +186,7 @@ namespace RTC
 			// clang-format on
 			{
 				payloadDescriptor->isKeyFrame = true;
-			}
+			} */
 
 			return payloadDescriptor.release();
 		}

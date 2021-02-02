@@ -6,10 +6,12 @@
 #include "RTC/RtpPacket.hpp"
 #include "RTC/SeqManager.hpp"
 
-/*  WIP
-    https://aomediacodec.github.io/av1-rtp-spec/
-    https://aomediacodec.github.io/av1-spec/av1-spec.pdf
-    * AV1 Payload Descriptor
+/*  
+Ref.
+	https://aomediacodec.github.io/av1-rtp-spec/
+	https://aomediacodec.github.io/av1-spec/av1-spec.pdf
+    
+* AV1 Payload Descriptor
 
 0                   1                   2                   3
 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
@@ -37,17 +39,28 @@
 |                                               |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
-Z: MUST be set to 1 if the first OBU element is an OBU fragment that is a continuation of an OBU fragment from the previous packet, and MUST be set to 0 otherwise.
-Y: MUST be set to 1 if the last OBU element is an OBU fragment that will continue in the next packet, and MUST be set to 0 otherwise.
+Z: MUST be set to 1 if the first OBU element is an OBU fragment that is a continuation 
+	of an OBU fragment from the previous packet, and MUST be set to 0 otherwise.
+
+Y: MUST be set to 1 if the last OBU element is an OBU fragment that will continue 
+	in the next packet, and MUST be set to 0 otherwise.
+
 W: two bit field that describes the number of OBU elements in the packet. 
-    This field MUST be set equal to 0 or equal to the number of OBU elements contained in the packet. If set to 0, each OBU element MUST be preceded by a length field. If not set to 0 (i.e., W = 1, 2 or 3) the last OBU element MUST NOT be preceded by a length field. Instead, the length of the last OBU element contained in the packet can be calculated as follows:
+    This field MUST be set equal to 0 or equal to the number of OBU elements contained 
+	in the packet. If set to 0, each OBU element MUST be preceded by a length field. 
+	If not set to 0 (i.e., W = 1, 2 or 3) the last OBU element MUST NOT be preceded 
+	by a length field. Instead, the length of the last OBU element contained in 
+	the packet can be calculated as follows:
+
     Length of the last OBU element = 
     length of the RTP payload
     - length of aggregation header
     - length of previous OBU elements including length fields
-N: MUST be set to 1 if the packet is the first packet of a coded video sequence, and MUST be set to 0 otherwise.
 
- */
+N: MUST be set to 1 if the packet is the first packet of a coded video sequence, 
+	and MUST be set to 0 otherwise.
+
+*/
 
 namespace RTC
 {
@@ -63,6 +76,19 @@ namespace RTC
 
 				void Dump() const override;
 
+				// OBU header
+				uint8_t z : 1; // first OBU fragment
+				uint8_t y : 1; // last OBU fragment
+				uint8_t w : 2; // number of OBU fragments
+				uint8_t n : 1; // first packet of a coded video sequence
+
+				uint8_t obu_type : 4; // 
+				uint8_t obu_extension_flag : 1; // 
+				uint8_t obu_has_size_field : 1; // 
+
+				uint8_t temporal_id : 3;
+				uint8_t spatial_id : 2;
+				
 				// Header.
 				uint8_t i : 1; // I: Picture ID (PID) present.
 				uint8_t p : 1; // P: Inter-picture predicted layer frame.
