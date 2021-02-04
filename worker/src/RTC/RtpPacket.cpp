@@ -258,6 +258,10 @@ namespace RTC
 		{
 			MS_DUMP("  frameMarking      : extId:%" PRIu8, this->frameMarkingExtensionId);
 		}
+		if (this->dependencyDescriptorExtensionId != 0u)
+		{
+			MS_DUMP("  dependencyDescriptor: extId:%" PRIu8, this->dependencyDescriptorExtensionId);
+		}
 		if (this->ssrcAudioLevelExtensionId != 0u)
 		{
 			uint8_t volume;
@@ -376,6 +380,7 @@ namespace RTC
 		this->transportWideCc01ExtensionId = 0u;
 		this->frameMarking07ExtensionId    = 0u;
 		this->frameMarkingExtensionId      = 0u;
+		this->dependencyDescriptorExtensionId = 0u;
 		this->ssrcAudioLevelExtensionId    = 0u;
 		this->videoOrientationExtensionId  = 0u;
 
@@ -703,6 +708,7 @@ namespace RTC
 		packet->transportWideCc01ExtensionId = this->transportWideCc01ExtensionId;
 		packet->frameMarking07ExtensionId    = this->frameMarking07ExtensionId; // Remove once RFC.
 		packet->frameMarkingExtensionId      = this->frameMarkingExtensionId;
+		packet->dependencyDescriptorExtensionId = this->dependencyDescriptorExtensionId;
 		packet->ssrcAudioLevelExtensionId    = this->ssrcAudioLevelExtensionId;
 		packet->videoOrientationExtensionId  = this->videoOrientationExtensionId;
 

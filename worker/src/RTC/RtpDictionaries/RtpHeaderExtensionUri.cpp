@@ -22,7 +22,9 @@ namespace RTC
 		{ "urn:ietf:params:rtp-hdrext:framemarking",                                   RtpHeaderExtensionUri::Type::FRAME_MARKING          },
 		{ "urn:ietf:params:rtp-hdrext:ssrc-audio-level",                               RtpHeaderExtensionUri::Type::SSRC_AUDIO_LEVEL       },
 		{ "urn:3gpp:video-orientation",                                                RtpHeaderExtensionUri::Type::VIDEO_ORIENTATION      },
-		{ "urn:ietf:params:rtp-hdrext:toffset",                                        RtpHeaderExtensionUri::Type::TOFFSET                }
+		{ "urn:ietf:params:rtp-hdrext:toffset",                                        RtpHeaderExtensionUri::Type::TOFFSET                },
+		{ "https://aomediacodec.github.io/av1-rtp-spec/#dependency-descriptor-rtp-header-extension", 
+																					   RtpHeaderExtensionUri::Type::DEPENDENCY_DESCRIPTOR  },
 	};
 	// clang-format on
 

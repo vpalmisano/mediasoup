@@ -114,6 +114,13 @@ namespace RTC
 		};
 
 	public:
+		/* Struct with dependecy-descriptor information. */
+		struct DependencyDescriptor
+		{
+			// TODO https://aomediacodec.github.io/av1-rtp-spec/#a82-syntax
+		};
+
+	public:
 		static bool IsRtp(const uint8_t* data, size_t len)
 		{
 			// NOTE: RtcpPacket::IsRtcp() must always be called before this method.
@@ -292,6 +299,11 @@ namespace RTC
 			this->frameMarkingExtensionId = id;
 		}
 
+		void SetDependencyDescriptorExtensionId(uint8_t id)
+		{
+			this->dependencyDescriptorExtensionId = id;
+		}
+
 		void SetSsrcAudioLevelExtensionId(uint8_t id)
 		{
 			this->ssrcAudioLevelExtensionId = id;
@@ -409,6 +421,21 @@ namespace RTC
 				return false;
 
 			*frameMarking = reinterpret_cast<RtpPacket::FrameMarking*>(extenValue);
+			length        = extenLen;
+
+			return true;
+		}
+
+		bool ReadDependencyDescriptor(RtpPacket::DependencyDescriptor** dependencyDescriptor, uint8_t& length) const
+		{
+			uint8_t extenLen;
+			uint8_t* extenValue = GetExtension(this->dependencyDescriptorExtensionId, extenLen);
+
+			if (!extenValue || extenLen > 3u)
+				return false;
+
+			// TODO https://aomediacodec.github.io/av1-rtp-spec/#a82-syntax
+			*dependencyDescriptor = reinterpret_cast<RtpPacket::DependencyDescriptor*>(extenValue);
 			length        = extenLen;
 
 			return true;
@@ -619,6 +646,7 @@ namespace RTC
 		uint8_t transportWideCc01ExtensionId{ 0u };
 		uint8_t frameMarking07ExtensionId{ 0u }; // NOTE: Remove once RFC.
 		uint8_t frameMarkingExtensionId{ 0u };
+		uint8_t dependencyDescriptorExtensionId{ 0u };
 		uint8_t ssrcAudioLevelExtensionId{ 0u };
 		uint8_t videoOrientationExtensionId{ 0u };
 		uint8_t* payload{ nullptr };

@@ -139,7 +139,8 @@ namespace RTC
 			FRAME_MARKING          = 7,
 			SSRC_AUDIO_LEVEL       = 10,
 			VIDEO_ORIENTATION      = 11,
-			TOFFSET                = 12
+			TOFFSET                = 12,
+			DEPENDENCY_DESCRIPTOR  = 13
 		};
 
 	private:

@@ -67,9 +67,9 @@ namespace RTC
 			// https://aomediacodec.github.io/av1-spec/av1-spec.pdf 5.3.1
 			if (payloadDescriptor->n)
 			{
-				/* MS_WARN_TAG(rtp, "z=%u y=%u w=%u n=%u", 
+				MS_WARN_TAG(rtp, "z=%u y=%u w=%u n=%u", 
 					payloadDescriptor->z, payloadDescriptor->y, payloadDescriptor->w, payloadDescriptor->n
-				); */
+				);
 				payloadDescriptor->isKeyFrame = true;
 			}
 
@@ -199,9 +199,19 @@ namespace RTC
 			auto len   = packet->GetPayloadLength();
 			RtpPacket::FrameMarking* frameMarking{ nullptr };
 			uint8_t frameMarkingLen{ 0 };
+			RtpPacket::DependencyDescriptor* dependencyDescriptor{ nullptr };
+			uint8_t dependencyDescriptorLen{ 0 };
 
 			// Read frame-marking.
 			packet->ReadFrameMarking(&frameMarking, frameMarkingLen);
+
+			// Read Dependency Descriptor
+			packet->ReadDependencyDescriptor(&dependencyDescriptor, dependencyDescriptorLen);
+
+			if (dependencyDescriptor)
+			{
+				MS_WARN_TAG(rtp, "DependencyDescriptor at %p", dependencyDescriptor);
+			}
 
 			PayloadDescriptor* payloadDescriptor = AV1X::Parse(data, len, frameMarking, frameMarkingLen);
 

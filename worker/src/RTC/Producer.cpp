@@ -259,6 +259,11 @@ namespace RTC
 				this->rtpHeaderExtensionIds.frameMarking = exten.id;
 			}
 
+			if (this->rtpHeaderExtensionIds.dependencyDescriptor == 0u && exten.type == RTC::RtpHeaderExtensionUri::Type::DEPENDENCY_DESCRIPTOR)
+			{
+				this->rtpHeaderExtensionIds.dependencyDescriptor = exten.id;
+			}
+
 			if (this->rtpHeaderExtensionIds.ssrcAudioLevel == 0u && exten.type == RTC::RtpHeaderExtensionUri::Type::SSRC_AUDIO_LEVEL)
 			{
 				this->rtpHeaderExtensionIds.ssrcAudioLevel = exten.id;
@@ -1173,6 +1178,7 @@ namespace RTC
 			// NOTE: Remove this once framemarking draft becomes RFC.
 			packet->SetFrameMarking07ExtensionId(this->rtpHeaderExtensionIds.frameMarking07);
 			packet->SetFrameMarkingExtensionId(this->rtpHeaderExtensionIds.frameMarking);
+			packet->SetDependencyDescriptorExtensionId(this->rtpHeaderExtensionIds.dependencyDescriptor);
 		}
 	}
 
@@ -1355,6 +1361,8 @@ namespace RTC
 			  static_cast<uint8_t>(RTC::RtpHeaderExtensionUri::Type::FRAME_MARKING_07));
 			packet->SetFrameMarkingExtensionId(
 			  static_cast<uint8_t>(RTC::RtpHeaderExtensionUri::Type::FRAME_MARKING));
+			packet->SetDependencyDescriptorExtensionId(
+			  static_cast<uint8_t>(RTC::RtpHeaderExtensionUri::Type::DEPENDENCY_DESCRIPTOR));
 			packet->SetSsrcAudioLevelExtensionId(
 			  static_cast<uint8_t>(RTC::RtpHeaderExtensionUri::Type::SSRC_AUDIO_LEVEL));
 			packet->SetVideoOrientationExtensionId(
