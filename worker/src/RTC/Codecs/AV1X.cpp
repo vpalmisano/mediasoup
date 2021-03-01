@@ -208,11 +208,6 @@ namespace RTC
 			// Read Dependency Descriptor
 			packet->ReadDependencyDescriptor(&dependencyDescriptor, dependencyDescriptorLen);
 
-			if (dependencyDescriptorLen)
-			{
-				packet->DumpDependencyDescriptor(dependencyDescriptor, dependencyDescriptorLen);
-			}
-
 			PayloadDescriptor* payloadDescriptor = AV1X::Parse(data, len, frameMarking, frameMarkingLen);
 
 			if (!payloadDescriptor)

@@ -106,9 +106,14 @@ namespace RTC
 			auto len   = packet->GetPayloadLength();
 			RtpPacket::FrameMarking* frameMarking{ nullptr };
 			uint8_t frameMarkingLen{ 0 };
+			RtpPacket::DependencyDescriptor dependencyDescriptor{ 0u };
+			uint8_t dependencyDescriptorLen{ 0 };
 
 			// Read frame-marking.
 			packet->ReadFrameMarking(&frameMarking, frameMarkingLen);
+
+			// Read Dependency Descriptor
+			packet->ReadDependencyDescriptor(&dependencyDescriptor, dependencyDescriptorLen);
 
 			PayloadDescriptor* payloadDescriptor = VP9::Parse(data, len, frameMarking, frameMarkingLen);
 

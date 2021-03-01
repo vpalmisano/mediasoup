@@ -1000,7 +1000,7 @@ namespace RTC
 			if (dependencyDescriptor->template_dependency_structure_present_flag)
 			{
 				// template_dependency_structure
-				dependencyDescriptor->template_id_offset = (byte & 0x07) + (extenValue[offset + 1] & 0xe0); // 00000111 + 11100000
+				dependencyDescriptor->template_id_offset = (byte & 0x07) + ((extenValue[offset + 1] >> 5) & 0x07); // 00000111 + 11100000
 				dependencyDescriptor->dt_cnt_minus_one = extenValue[offset + 1] & 0x1f; // 00011111
 				offset += 2;
 				MS_ASSERT(extenLen >= offset, "invalid offset inside DependencyDescriptor extension");
@@ -1013,7 +1013,7 @@ namespace RTC
 				uint8_t spatialId = 0;
 				uint8_t templateCnt = 0;
 				uint8_t next_layer_idc = 0;
-				size_t bitOffset = 6;
+				int bitOffset = 6;
 				do {
 					MS_ASSERT(templateCnt < sizeof(dependencyDescriptor->TemplateSpatialId),
 						"invalid templateCnt inside DependencyDescriptor extension");
@@ -1049,16 +1049,75 @@ namespace RTC
 
 				dependencyDescriptor->maxSpatialId = spatialId;
 
-				/* template_dtis()
-				template_fdiffs()
-				template_chains()
-				decode_target_layers()
+				// template_dtis
+				/* for (int templateIndex = 0; templateIndex < templateCnt; templateIndex++)
+				{
+					for (int dtIndex = 0; dtIndex < DtCnt; dtIndex++)
+					{
+						// See table A.1 below for meaning of DTI values.
+						template_dti[templateIndex][dtIndex] = f(2)
+					}
+				} */
+
+				// template_fdiffs
+				/* uint8_t FrameFdiffCnt = 0
+				next_fdiff_size = f(2)
+				while (next_fdiff_size) {
+					fdiff_minus_one = f(4 * next_fdiff_size)
+					FrameFdiff[FrameFdiffCnt] = fdiff_minus_one + 1
+					FrameFdiffCnt++
+					next_fdiff_size = f(2)
+				} */
+
+				// template_chains
+				/* chain_cnt = ns(DtCnt + 1)
+				if (chain_cnt == 0) {
+					return
+				}
+				for (dtIndex = 0; dtIndex < DtCnt; dtIndex++) {
+					decode_target_protected_by[dtIndex] = ns(chain_cnt)
+				}
+				for (templateIndex = 0; templateIndex < TemplateCnt; templateIndex++) {
+					for (chainIndex = 0; chainIndex < chain_cnt; chainIndex++) {
+						template_chain_fdiff[templateIndex][chainIndex] = f(4)
+					}
+				} */
+
+				/*
+				// frame_chains
+				for (chainIndex = 0; chainIndex < chain_cnt; chainIndex++) {
+					frame_chain_fdiff[chainIndex] = f(8)
+				}
+				*/
+
+				// decode_target_layers
+				/* for (int dtIndex = 0; dtIndex < dtCnt; dtIndex++)
+				{
+					uint8_t spatialId = 0;
+					uint8_t temporalId = 0;
+					for (int templateIndex = 0; templateIndex < templateCnt; templateIndex++) {
+					if (template_dti[templateIndex][dtIndex] != 0) {
+						if (TemplateSpatialId[templateIndex] > spatialId) {
+							spatialId = TemplateSpatialId[templateIndex];
+						}
+						if (TemplateTemporalId[templateIndex] > temporalId) {
+							temporalId = TemplateTemporalId[templateIndex];
+						}
+					}
+					}
+					DecodeTargetSpatialId[dtIndex] = spatialId;
+					DecodeTargetTemporalId[dtIndex] = temporalId;
+				} */
+
+
+				/*
 				resolutions_present_flag = f(1)
 				if (resolutions_present_flag) {
 					render_resolutions()
 				} */
 
 				//- template_dependency_structure
+
 				//dependencyDescriptor->active_decode_targets_bitmask = (1 << DtCnt) - 1
 			}
 
@@ -1111,6 +1170,12 @@ namespace RTC
 			}
 		}
 		*/
+
+
+		if (length)
+		{
+			DumpDependencyDescriptor(*dependencyDescriptor, length);
+		}
 
 		return true;
 	}
