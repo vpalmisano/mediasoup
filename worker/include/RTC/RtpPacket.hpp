@@ -117,7 +117,41 @@ namespace RTC
 		/* Struct with dependecy-descriptor information. */
 		struct DependencyDescriptor
 		{
-			// TODO https://aomediacodec.github.io/av1-rtp-spec/#a82-syntax
+			// https://aomediacodec.github.io/av1-rtp-spec/#a82-syntax
+			// mandatory_descriptor_fields
+			uint8_t start_of_frame : 1;
+			uint8_t end_of_frame : 1;
+			uint8_t frame_dependency_template_id : 6;
+			uint16_t frame_number;
+			// extended_descriptor_fields
+			uint8_t template_dependency_structure_present_flag : 1;
+			uint8_t active_decode_targets_present_flag : 1;
+			uint8_t custom_dtis_flag : 1;
+			uint8_t custom_fdiffs_flag : 1;
+			uint8_t custom_chains_flag : 1;
+			// template_dependency_structure
+			uint8_t template_id_offset : 6;
+			uint8_t dt_cnt_minus_one : 5;
+			//DtCnt = dt_cnt_minus_one + 1
+			//template_layers
+			uint8_t TemplateSpatialId[16];
+			uint8_t TemplateTemporalId[16];
+			uint8_t maxTemporalId;
+			uint8_t maxSpatialId;
+			//template_dtis()
+			//template_fdiffs()
+			//template_chains()
+			//decode_target_layers()
+			uint8_t resolutions_present_flag : 1;
+			//render_resolutions()
+
+			uint8_t active_decode_targets_bitmask;
+
+			// extended_descriptor_fields
+
+			// frame_dependency_definition
+
+			// zero_padding = f(sz * 8 - TotalConsumedBits)
 		};
 
 	public:
@@ -426,20 +460,9 @@ namespace RTC
 			return true;
 		}
 
-		bool ReadDependencyDescriptor(RtpPacket::DependencyDescriptor** dependencyDescriptor, uint8_t& length) const
-		{
-			uint8_t extenLen;
-			uint8_t* extenValue = GetExtension(this->dependencyDescriptorExtensionId, extenLen);
+		bool ReadDependencyDescriptor(RtpPacket::DependencyDescriptor* dependencyDescriptor, uint8_t& length) const;
 
-			if (!extenValue || extenLen > 3u)
-				return false;
-
-			// TODO https://aomediacodec.github.io/av1-rtp-spec/#a82-syntax
-			*dependencyDescriptor = reinterpret_cast<RtpPacket::DependencyDescriptor*>(extenValue);
-			length        = extenLen;
-
-			return true;
-		}
+		void DumpDependencyDescriptor(RtpPacket::DependencyDescriptor dependencyDescriptor, uint8_t length) const;
 
 		bool ReadSsrcAudioLevel(uint8_t& volume, bool& voice) const
 		{

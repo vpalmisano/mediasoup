@@ -199,7 +199,7 @@ namespace RTC
 			auto len   = packet->GetPayloadLength();
 			RtpPacket::FrameMarking* frameMarking{ nullptr };
 			uint8_t frameMarkingLen{ 0 };
-			RtpPacket::DependencyDescriptor* dependencyDescriptor{ nullptr };
+			RtpPacket::DependencyDescriptor dependencyDescriptor{ 0u };
 			uint8_t dependencyDescriptorLen{ 0 };
 
 			// Read frame-marking.
@@ -208,9 +208,9 @@ namespace RTC
 			// Read Dependency Descriptor
 			packet->ReadDependencyDescriptor(&dependencyDescriptor, dependencyDescriptorLen);
 
-			if (dependencyDescriptor)
+			if (dependencyDescriptorLen)
 			{
-				MS_WARN_TAG(rtp, "DependencyDescriptor at %p", dependencyDescriptor);
+				packet->DumpDependencyDescriptor(dependencyDescriptor, dependencyDescriptorLen);
 			}
 
 			PayloadDescriptor* payloadDescriptor = AV1X::Parse(data, len, frameMarking, frameMarkingLen);

@@ -352,7 +352,14 @@ const supportedRtpCapabilities: RtpCapabilities =
 			preferredId      : 12,
 			preferredEncrypt : false,
 			direction        : 'sendrecv'
-		}
+		},
+		{
+            kind			 : 'video',
+            uri				 : 'https://aomediacodec.github.io/av1-rtp-spec/#dependency-descriptor-rtp-header-extension',
+            preferredId		 : 13,
+            preferredEncrypt : false,
+            direction		 : 'sendrecv'
+        }
 	]
 };
 

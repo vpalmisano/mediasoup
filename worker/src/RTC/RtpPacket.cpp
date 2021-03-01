@@ -373,16 +373,16 @@ namespace RTC
 		MS_ASSERT(type == 1u || type == 2u, "type must be 1 or 2");
 
 		// Reset extension ids.
-		this->midExtensionId               = 0u;
-		this->ridExtensionId               = 0u;
-		this->rridExtensionId              = 0u;
-		this->absSendTimeExtensionId       = 0u;
-		this->transportWideCc01ExtensionId = 0u;
-		this->frameMarking07ExtensionId    = 0u;
-		this->frameMarkingExtensionId      = 0u;
+		this->midExtensionId                  = 0u;
+		this->ridExtensionId                  = 0u;
+		this->rridExtensionId                 = 0u;
+		this->absSendTimeExtensionId          = 0u;
+		this->transportWideCc01ExtensionId    = 0u;
+		this->frameMarking07ExtensionId       = 0u;
+		this->frameMarkingExtensionId         = 0u;
 		this->dependencyDescriptorExtensionId = 0u;
-		this->ssrcAudioLevelExtensionId    = 0u;
-		this->videoOrientationExtensionId  = 0u;
+		this->ssrcAudioLevelExtensionId       = 0u;
+		this->videoOrientationExtensionId     = 0u;
 
 		// Clear the One-Byte and Two-Bytes extension elements maps.
 		this->mapOneByteExtensions.clear();
@@ -701,16 +701,16 @@ namespace RTC
 		  newHeader, newHeaderExtension, newPayload, this->payloadLength, this->payloadPadding, this->size);
 
 		// Keep already set extension ids.
-		packet->midExtensionId               = this->midExtensionId;
-		packet->ridExtensionId               = this->ridExtensionId;
-		packet->rridExtensionId              = this->rridExtensionId;
-		packet->absSendTimeExtensionId       = this->absSendTimeExtensionId;
-		packet->transportWideCc01ExtensionId = this->transportWideCc01ExtensionId;
-		packet->frameMarking07ExtensionId    = this->frameMarking07ExtensionId; // Remove once RFC.
-		packet->frameMarkingExtensionId      = this->frameMarkingExtensionId;
+		packet->midExtensionId                  = this->midExtensionId;
+		packet->ridExtensionId                  = this->ridExtensionId;
+		packet->rridExtensionId                 = this->rridExtensionId;
+		packet->absSendTimeExtensionId          = this->absSendTimeExtensionId;
+		packet->transportWideCc01ExtensionId    = this->transportWideCc01ExtensionId;
+		packet->frameMarking07ExtensionId       = this->frameMarking07ExtensionId; // Remove once RFC.
+		packet->frameMarkingExtensionId         = this->frameMarkingExtensionId;
 		packet->dependencyDescriptorExtensionId = this->dependencyDescriptorExtensionId;
-		packet->ssrcAudioLevelExtensionId    = this->ssrcAudioLevelExtensionId;
-		packet->videoOrientationExtensionId  = this->videoOrientationExtensionId;
+		packet->ssrcAudioLevelExtensionId       = this->ssrcAudioLevelExtensionId;
+		packet->videoOrientationExtensionId     = this->videoOrientationExtensionId;
 
 		return packet;
 	}
@@ -958,4 +958,194 @@ namespace RTC
 			}
 		}
 	}
+
+	bool RtpPacket::ReadDependencyDescriptor(RtpPacket::DependencyDescriptor* dependencyDescriptor, uint8_t& length) const
+	{
+		MS_TRACE();
+
+		uint8_t extenLen;
+		uint8_t* extenValue = GetExtension(this->dependencyDescriptorExtensionId, extenLen);
+
+		if (!extenValue || extenLen < 3u)
+		{
+			length = 0;
+			return false;
+		}
+
+		length = extenLen;
+
+		// TODO https://aomediacodec.github.io/av1-rtp-spec/#a82-syntax		
+		size_t offset{ 0 };
+		uint8_t byte = extenValue[offset];
+		size_t DtCnt{ 0 };
+
+		// mandatory_descriptor_fields
+		dependencyDescriptor->start_of_frame = (byte >> 7) & 0x01;					// 10000000
+		dependencyDescriptor->end_of_frame = (byte >> 6) & 0x01;					// 01000000
+		dependencyDescriptor->frame_dependency_template_id = byte & 0x3f;			// 00111111
+		dependencyDescriptor->frame_number = (extenValue[offset + 1] << 8) + extenValue[offset + 2]; // 2 bytes
+		offset += 3;
+		
+		if (extenLen > 3)
+		{
+			// extended_descriptor_fields
+			byte = extenValue[offset];
+
+			dependencyDescriptor->template_dependency_structure_present_flag = (byte >> 7) & 0x01; 	// 10000000
+			dependencyDescriptor->active_decode_targets_present_flag = (byte >> 6) & 0x01;			// 01000000
+			dependencyDescriptor->custom_dtis_flag = (byte >> 5) & 0x01;							// 00100000
+			dependencyDescriptor->custom_fdiffs_flag = (byte >> 4) & 0x01;							// 00010000
+			dependencyDescriptor->custom_chains_flag = (byte >> 3) & 0x01;							// 00001000
+			
+			if (dependencyDescriptor->template_dependency_structure_present_flag)
+			{
+				// template_dependency_structure
+				dependencyDescriptor->template_id_offset = (byte & 0x07) + (extenValue[offset + 1] & 0xe0); // 00000111 + 11100000
+				dependencyDescriptor->dt_cnt_minus_one = extenValue[offset + 1] & 0x1f; // 00011111
+				offset += 2;
+				MS_ASSERT(extenLen >= offset, "invalid offset inside DependencyDescriptor extension");
+				byte = extenValue[offset];
+
+				DtCnt = dependencyDescriptor->dt_cnt_minus_one + 1;
+
+				// template_layers
+				uint8_t temporalId = 0;
+				uint8_t spatialId = 0;
+				uint8_t templateCnt = 0;
+				uint8_t next_layer_idc = 0;
+				size_t bitOffset = 6;
+				do {
+					MS_ASSERT(templateCnt < sizeof(dependencyDescriptor->TemplateSpatialId),
+						"invalid templateCnt inside DependencyDescriptor extension");
+					dependencyDescriptor->TemplateSpatialId[templateCnt] = spatialId;
+					dependencyDescriptor->TemplateTemporalId[templateCnt] = temporalId;
+					templateCnt++;
+
+					next_layer_idc = (byte >> bitOffset) & 0x03;
+					bitOffset -= 2;
+					if (bitOffset < 0)
+					{
+						offset++;
+						MS_ASSERT(extenLen >= offset, "invalid offset inside DependencyDescriptor extension");
+						byte = extenValue[offset];
+						bitOffset = 6;
+					}
+
+					// next_layer_idc == 0 - same sid and tid
+					if (next_layer_idc == 1)
+					{
+						temporalId++;
+						if (temporalId > dependencyDescriptor->maxTemporalId)
+						{
+							dependencyDescriptor->maxTemporalId = temporalId;
+						}
+					}
+					else if (next_layer_idc == 2)
+					{
+						temporalId = 0;
+						spatialId++;
+					}
+				} while (next_layer_idc != 3);
+
+				dependencyDescriptor->maxSpatialId = spatialId;
+
+				/* template_dtis()
+				template_fdiffs()
+				template_chains()
+				decode_target_layers()
+				resolutions_present_flag = f(1)
+				if (resolutions_present_flag) {
+					render_resolutions()
+				} */
+
+				//- template_dependency_structure
+				//dependencyDescriptor->active_decode_targets_bitmask = (1 << DtCnt) - 1
+			}
+
+			if (dependencyDescriptor->active_decode_targets_present_flag)
+			{
+				//dependencyDescriptor->active_decode_targets_bitmask = f(DtCnt)
+			}
+
+		}
+		else
+		{
+			//no_extended_descriptor_fields
+			dependencyDescriptor->custom_dtis_flag = 0;
+			dependencyDescriptor->custom_fdiffs_flag = 0;
+			dependencyDescriptor->custom_chains_flag = 0;
+		}
+		
+		// frame_dependency_definition
+		/*
+		frame_dependency_definition() {
+			templateIndex = (frame_dependency_template_id + 64 - template_id_offset) % 64
+			If (templateIndex >= templateCnt) {
+				return  // error
+			}
+			FrameSpatialId = TemplateSpatialId[templateIndex]
+			FrameTemporalId = TemplateTemporalId[templateIndex]
+
+			if (custom_dtis_flag) {
+				frame_dtis()
+			} else {
+				frame_dti = template_dti[templateIndex]
+			}
+
+			if (custom_fdiffs_flag) {
+				frame_fdiffs()
+			} else {
+				FrameFdiffCnt = TemplateFdiffCnt[templateIndex]
+				FrameFdiff = TemplateFdiff[templateIndex]
+			}
+
+			if (custom_chains_flag) {
+				frame_chains()
+			} else {
+				frame_chain_fdiff = template_chain_fdiff[templateIndex]
+			}
+
+			if (resolutions_present_flag) {
+				FrameMaxWidth = max_render_width_minus_one[FrameSpatialId] + 1
+				FrameMaxHeight = max_render_height_minus_one[FrameSpatialId] + 1
+			}
+		}
+		*/
+
+		return true;
+	}
+
+	void RtpPacket::DumpDependencyDescriptor(RtpPacket::DependencyDescriptor dependencyDescriptor, uint8_t length) const
+	{
+		MS_TRACE();
+
+		if (!length)
+			return;
+
+		MS_DUMP("<DependencyDescriptor>");
+		MS_DUMP(
+			"  size: %u\n"
+			"  start_of_frame: %u end_of_frame: %u\n"
+			"  frame_dependency_template_id: %u\n"
+			"  frame_number: %u\n"
+			"  template_dependency_structure_present_flag: %u\n"
+			"  active_decode_targets_present_flag: %u\n"
+			"  custom_dtis_flag: %u\n"
+			"  custom_fdiffs_flag: %u\n"
+			"  custom_chains_flag: %u\n"
+			"  maxTemporalId: %u maxSpatialId: %u\n"
+			,
+			length, 
+			dependencyDescriptor.start_of_frame, dependencyDescriptor.end_of_frame,
+			dependencyDescriptor.frame_dependency_template_id,
+			dependencyDescriptor.frame_number,
+			dependencyDescriptor.template_dependency_structure_present_flag,
+			dependencyDescriptor.active_decode_targets_present_flag,
+			dependencyDescriptor.custom_dtis_flag,
+			dependencyDescriptor.custom_fdiffs_flag,
+			dependencyDescriptor.custom_chains_flag,
+			dependencyDescriptor.maxTemporalId, dependencyDescriptor.maxSpatialId
+		);
+	}
+
 } // namespace RTC
