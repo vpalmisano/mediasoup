@@ -199,7 +199,7 @@ namespace RTC
 			auto len   = packet->GetPayloadLength();
 			RtpPacket::FrameMarking* frameMarking{ nullptr };
 			uint8_t frameMarkingLen{ 0 };
-			RtpPacket::DependencyDescriptor dependencyDescriptor{ 0u };
+			RtpPacket::DependencyDescriptor dependencyDescriptor{ 0 };
 			uint8_t dependencyDescriptorLen{ 0 };
 
 			// Read frame-marking.

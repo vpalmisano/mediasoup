@@ -977,7 +977,6 @@ namespace RTC
 		// TODO https://aomediacodec.github.io/av1-rtp-spec/#a82-syntax		
 		size_t offset{ 0 };
 		uint8_t byte = extenValue[offset];
-		size_t DtCnt{ 0 };
 
 		// mandatory_descriptor_fields
 		dependencyDescriptor->start_of_frame = (byte >> 7) & 0x01;					// 10000000
@@ -1000,13 +999,11 @@ namespace RTC
 			if (dependencyDescriptor->template_dependency_structure_present_flag)
 			{
 				// template_dependency_structure
-				dependencyDescriptor->template_id_offset = (byte & 0x07) + ((extenValue[offset + 1] >> 5) & 0x07); // 00000111 + 11100000
-				dependencyDescriptor->dt_cnt_minus_one = extenValue[offset + 1] & 0x1f; // 00011111
+				dependencyDescriptor->template_id_offset = ((byte & 0x07) << 3) + ((extenValue[offset + 1] >> 5) & 0x07); // 00000111 + 11100000
+				dependencyDescriptor->dt_cnt = 1 + (extenValue[offset + 1] & 0x1f); // 00011111
 				offset += 2;
 				MS_ASSERT(extenLen >= offset, "invalid offset inside DependencyDescriptor extension");
 				byte = extenValue[offset];
-
-				DtCnt = dependencyDescriptor->dt_cnt_minus_one + 1;
 
 				// template_layers
 				uint8_t temporalId = 0;
@@ -1050,22 +1047,30 @@ namespace RTC
 				dependencyDescriptor->maxSpatialId = spatialId;
 
 				// template_dtis
-				/* for (int templateIndex = 0; templateIndex < templateCnt; templateIndex++)
+				for (int templateIndex = 0; templateIndex < templateCnt; templateIndex++)
 				{
-					for (int dtIndex = 0; dtIndex < DtCnt; dtIndex++)
+					for (int dtIndex = 0; dtIndex < dependencyDescriptor->dt_cnt; dtIndex++)
 					{
 						// See table A.1 below for meaning of DTI values.
-						template_dti[templateIndex][dtIndex] = f(2)
+						dependencyDescriptor->template_dti[templateIndex][dtIndex] = (byte >> bitOffset) & 0x03;
+						bitOffset -= 2;
+						if (bitOffset < 0)
+						{
+							offset++;
+							MS_ASSERT(extenLen >= offset, "invalid offset inside DependencyDescriptor extension");
+							byte = extenValue[offset];
+							bitOffset = 6;
+						}
 					}
-				} */
+				}
 
 				// template_fdiffs
-				/* uint8_t FrameFdiffCnt = 0
+				/* uint8_t frameFdiffCnt = 0;
 				next_fdiff_size = f(2)
 				while (next_fdiff_size) {
-					fdiff_minus_one = f(4 * next_fdiff_size)
-					FrameFdiff[FrameFdiffCnt] = fdiff_minus_one + 1
-					FrameFdiffCnt++
+					fdiff_minus_one = f(4 * next_fdiff_size);
+					FrameFdiff[frameFdiffCnt] = fdiff_minus_one + 1;
+					frameFdiffCnt++;
 					next_fdiff_size = f(2)
 				} */
 
@@ -1171,12 +1176,10 @@ namespace RTC
 		}
 		*/
 
-
-		if (length)
-		{
+		// debug
+		if (length > 3)
 			DumpDependencyDescriptor(*dependencyDescriptor, length);
-		}
-
+	
 		return true;
 	}
 
@@ -1187,28 +1190,39 @@ namespace RTC
 		if (!length)
 			return;
 
-		MS_DUMP("<DependencyDescriptor>");
 		MS_DUMP(
+			"<DependencyDescriptor>"
 			"  size: %u\n"
 			"  start_of_frame: %u end_of_frame: %u\n"
 			"  frame_dependency_template_id: %u\n"
 			"  frame_number: %u\n"
+
 			"  template_dependency_structure_present_flag: %u\n"
 			"  active_decode_targets_present_flag: %u\n"
 			"  custom_dtis_flag: %u\n"
 			"  custom_fdiffs_flag: %u\n"
 			"  custom_chains_flag: %u\n"
+
+			"  template_id_offset: %u\n"
+			"  dt_cnt: %u\n"
+			
 			"  maxTemporalId: %u maxSpatialId: %u\n"
 			,
-			length, 
+			length,
+			// mandatory
 			dependencyDescriptor.start_of_frame, dependencyDescriptor.end_of_frame,
 			dependencyDescriptor.frame_dependency_template_id,
 			dependencyDescriptor.frame_number,
+			//
 			dependencyDescriptor.template_dependency_structure_present_flag,
 			dependencyDescriptor.active_decode_targets_present_flag,
 			dependencyDescriptor.custom_dtis_flag,
 			dependencyDescriptor.custom_fdiffs_flag,
 			dependencyDescriptor.custom_chains_flag,
+			// template_dependency_structure
+			dependencyDescriptor.template_id_offset,
+			dependencyDescriptor.dt_cnt,
+			
 			dependencyDescriptor.maxTemporalId, dependencyDescriptor.maxSpatialId
 		);
 	}

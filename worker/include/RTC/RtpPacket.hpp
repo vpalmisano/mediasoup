@@ -131,13 +131,14 @@ namespace RTC
 			uint8_t custom_chains_flag : 1;
 			// template_dependency_structure
 			uint8_t template_id_offset : 6;
-			uint8_t dt_cnt_minus_one : 5;
+			uint8_t dt_cnt;
 			//DtCnt = dt_cnt_minus_one + 1
 			//template_layers
-			uint8_t TemplateSpatialId[16];
-			uint8_t TemplateTemporalId[16];
+			uint8_t TemplateSpatialId[3];
+			uint8_t TemplateTemporalId[3];
 			uint8_t maxTemporalId;
 			uint8_t maxSpatialId;
+			uint8_t template_dti[3][3];
 			//template_dtis()
 			//template_fdiffs()
 			//template_chains()
