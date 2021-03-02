@@ -1030,32 +1030,47 @@ namespace RTC
 				dependencyDescriptor->maxSpatialId = spatialId;
 
 				// template_dtis
-				/* for (int templateIndex = 0; templateIndex < templateCnt; templateIndex++)
+				for (uint8_t templateIndex = 0; templateIndex < templateCnt; templateIndex++)
 				{
-					for (int dtIndex = 0; dtIndex < dependencyDescriptor->dt_cnt; dtIndex++)
+					for (uint8_t dtIndex = 0; dtIndex < dependencyDescriptor->dt_cnt; dtIndex++)
 					{
 						// See table A.1 below for meaning of DTI values.
 						dependencyDescriptor->template_dti[templateIndex][dtIndex] = Utils::Bits::ReadBits(extenValue, extenLen, 2, bitOffset);
 					}
-				} */
+				}
 
 				// template_fdiffs
-				/* uint8_t frameFdiffCnt = 0;
+				for (uint8_t templateIndex = 0; templateIndex < templateCnt; templateIndex++)
+				{
+					uint8_t fdiffCnt = 0;
+					uint8_t fdiff_follows_flag = Utils::Bits::ReadBits(extenValue, extenLen, 1, bitOffset);
+					while (fdiff_follows_flag)
+					{
+						uint8_t fdiff_minus_one = Utils::Bits::ReadBits(extenValue, extenLen, 4, bitOffset);
+						dependencyDescriptor->TemplateFdiff[templateIndex][fdiffCnt] = fdiff_minus_one + 1;
+						fdiffCnt++;
+						fdiff_follows_flag = Utils::Bits::ReadBits(extenValue, extenLen, 1, bitOffset);
+					}
+					dependencyDescriptor->TemplateFdiffCnt[templateIndex] = fdiffCnt;
+				}
+
+				// frame_fdiffs
+				uint8_t frameFdiffCnt = 0;
 				uint8_t next_fdiff_size = Utils::Bits::ReadBits(extenValue, extenLen, 2, bitOffset);
 				while (next_fdiff_size)
 				{
 					uint8_t fdiff_minus_one = Utils::Bits::ReadBits(extenValue, extenLen, 4 * next_fdiff_size, bitOffset);
-					//FrameFdiff[frameFdiffCnt] = fdiff_minus_one + 1;
+					dependencyDescriptor->FrameFdiff[frameFdiffCnt] = fdiff_minus_one + 1;
 					frameFdiffCnt++;
 					next_fdiff_size = Utils::Bits::ReadBits(extenValue, extenLen, 2, bitOffset);
-				} */
+				}
 
 				// template_chains
-				/* chain_cnt = ns(DtCnt + 1)
+				/* chain_cnt = ns(dependencyDescriptor->dt_cnt + 1)
 				if (chain_cnt == 0) {
 					return
 				}
-				for (dtIndex = 0; dtIndex < DtCnt; dtIndex++) {
+				for (dtIndex = 0; dtIndex < dependencyDescriptor->dt_cnt; dtIndex++) {
 					decode_target_protected_by[dtIndex] = ns(chain_cnt)
 				}
 				for (templateIndex = 0; templateIndex < TemplateCnt; templateIndex++) {
@@ -1072,7 +1087,7 @@ namespace RTC
 				*/
 
 				// decode_target_layers
-				/* for (int dtIndex = 0; dtIndex < dtCnt; dtIndex++)
+				/* for (int dtIndex = 0; dtIndex < dependencyDescriptor->dt_cnt; dtIndex++)
 				{
 					uint8_t spatialId = 0;
 					uint8_t temporalId = 0;
@@ -1099,12 +1114,12 @@ namespace RTC
 
 				//- template_dependency_structure
 
-				//dependencyDescriptor->active_decode_targets_bitmask = (1 << DtCnt) - 1
+				//dependencyDescriptor->active_decode_targets_bitmask = (1 << dependencyDescriptor->dt_cnt) - 1
 			}
 
 			if (dependencyDescriptor->active_decode_targets_present_flag)
 			{
-				//dependencyDescriptor->active_decode_targets_bitmask = f(DtCnt)
+				//dependencyDescriptor->active_decode_targets_bitmask = f(dependencyDescriptor->dt_cnt)
 			}
 
 		}
@@ -1201,6 +1216,49 @@ namespace RTC
 			
 			dependencyDescriptor.maxTemporalId, dependencyDescriptor.maxSpatialId
 		);
+
+		MS_DUMP("  TemplateSpatialId");
+		for (uint8_t i=0; i < sizeof(dependencyDescriptor.TemplateSpatialId); i++)
+		{
+			MS_DUMP("    [%u] %u", i, dependencyDescriptor.TemplateSpatialId[i]);
+		}
+
+		MS_DUMP("  TemplateTemporalId");
+		for (uint8_t i=0; i < sizeof(dependencyDescriptor.TemplateTemporalId); i++)
+		{
+			MS_DUMP("    [%u] %u", i, dependencyDescriptor.TemplateTemporalId[i]);
+		}
+
+		MS_DUMP("  template_dti");
+		for (uint8_t i=0; i<3; i++)
+		{
+			for (uint8_t j=0; j<3; j++)
+			{
+				MS_DUMP("    [%u][%u] %u", i, j, dependencyDescriptor.template_dti[i][j]);
+			}
+		}
+
+		MS_DUMP("  TemplateFdiff");
+		for (uint8_t i=0; i<3; i++)
+		{
+			for (uint8_t j=0; j<3; j++)
+			{
+				MS_DUMP("    [%u][%u] %u", i, j, dependencyDescriptor.TemplateFdiff[i][j]);
+			}
+		}
+
+		MS_DUMP("  TemplateFdiffCnt");
+		for (uint8_t i=0; i < sizeof(dependencyDescriptor.TemplateFdiffCnt); i++)
+		{
+			MS_DUMP("    [%u] %u", i, dependencyDescriptor.TemplateFdiffCnt[i]);
+		}
+
+		MS_DUMP("  FrameFdiff");
+		for (uint8_t i=0; i < sizeof(dependencyDescriptor.FrameFdiff); i++)
+		{
+			MS_DUMP("    [%u] %u", i, dependencyDescriptor.FrameFdiff[i]);
+		}
+
 	}
 
 } // namespace RTC

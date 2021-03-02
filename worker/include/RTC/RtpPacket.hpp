@@ -134,11 +134,14 @@ namespace RTC
 			uint8_t dt_cnt;
 			//DtCnt = dt_cnt_minus_one + 1
 			//template_layers
-			uint8_t TemplateSpatialId[3];
+			uint8_t TemplateSpatialId[3]; // FIXME array sizes = ?
 			uint8_t TemplateTemporalId[3];
 			uint8_t maxTemporalId;
 			uint8_t maxSpatialId;
 			uint8_t template_dti[3][3];
+			uint8_t TemplateFdiff[3][3];
+			uint8_t TemplateFdiffCnt[3];
+			uint8_t FrameFdiff[3];
 			//template_dtis()
 			//template_fdiffs()
 			//template_chains()
