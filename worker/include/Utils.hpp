@@ -235,17 +235,17 @@ namespace Utils
 			return value;
 		}
 
-		static uint32_t ReadBitsNonSymmetric(uint8_t* data, uint32_t dataLength, uint32_t bitCount, uint32_t& bitOffset)
+		static uint32_t ReadBitsNonSymmetric(uint8_t* data, uint32_t dataLength, uint32_t n, uint32_t& bitOffset)
 		{
 			uint32_t w = 0;
-			uint32_t x = bitCount;
+			uint32_t x = n;
 
 			while (x != 0)
 			{
 				x = x >> 1;
 				w++;
 			}
-			uint32_t m = (1 << w) - bitCount;
+			uint32_t m = (1 << w) - n;
 			uint32_t v = ReadBits(data, dataLength, w - 1, bitOffset);
 			if (v < m)
 				return v;
