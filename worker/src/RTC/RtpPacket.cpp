@@ -978,25 +978,25 @@ namespace RTC
 		uint32_t bitOffset{ 0 };
 
 		// mandatory_descriptor_fields
-		dependencyDescriptor->start_of_frame = Utils::Bits::ReadBits(extenValue, extenLen, 1, bitOffset);				// 10000000
-		dependencyDescriptor->end_of_frame = Utils::Bits::ReadBits(extenValue, extenLen, 1, bitOffset);   				// 01000000
-		dependencyDescriptor->frame_dependency_template_id = Utils::Bits::ReadBits(extenValue, extenLen, 6, bitOffset); // 00111111
-		dependencyDescriptor->frame_number = Utils::Bits::ReadBits(extenValue, extenLen, 16, bitOffset); 				// 2 bytes
+		dependencyDescriptor->start_of_frame = Utils::Bits::ReadBits(extenValue, extenLen, 1, bitOffset);
+		dependencyDescriptor->end_of_frame = Utils::Bits::ReadBits(extenValue, extenLen, 1, bitOffset);
+		dependencyDescriptor->frame_dependency_template_id = Utils::Bits::ReadBits(extenValue, extenLen, 6, bitOffset);
+		dependencyDescriptor->frame_number = Utils::Bits::ReadBits(extenValue, extenLen, 16, bitOffset);
 		
 		if (extenLen > 3)
 		{
 			// extended_descriptor_fields
-			dependencyDescriptor->template_dependency_structure_present_flag = Utils::Bits::ReadBits(extenValue, extenLen, 1, bitOffset);	// 10000000
-			dependencyDescriptor->active_decode_targets_present_flag = Utils::Bits::ReadBits(extenValue, extenLen, 1, bitOffset);			// 01000000
-			dependencyDescriptor->custom_dtis_flag = Utils::Bits::ReadBits(extenValue, extenLen, 1, bitOffset);								// 00100000
-			dependencyDescriptor->custom_fdiffs_flag = Utils::Bits::ReadBits(extenValue, extenLen, 1, bitOffset);							// 00010000
-			dependencyDescriptor->custom_chains_flag = Utils::Bits::ReadBits(extenValue, extenLen, 1, bitOffset);							// 00001000
+			dependencyDescriptor->template_dependency_structure_present_flag = Utils::Bits::ReadBits(extenValue, extenLen, 1, bitOffset);
+			dependencyDescriptor->active_decode_targets_present_flag = Utils::Bits::ReadBits(extenValue, extenLen, 1, bitOffset);
+			dependencyDescriptor->custom_dtis_flag = Utils::Bits::ReadBits(extenValue, extenLen, 1, bitOffset);
+			dependencyDescriptor->custom_fdiffs_flag = Utils::Bits::ReadBits(extenValue, extenLen, 1, bitOffset);
+			dependencyDescriptor->custom_chains_flag = Utils::Bits::ReadBits(extenValue, extenLen, 1, bitOffset);
 			
 			if (dependencyDescriptor->template_dependency_structure_present_flag)
 			{
 				// template_dependency_structure
-				dependencyDescriptor->template_id_offset = Utils::Bits::ReadBits(extenValue, extenLen, 6, bitOffset); // 00000111 + 11100000
-				dependencyDescriptor->dt_cnt = 1 + Utils::Bits::ReadBits(extenValue, extenLen, 5, bitOffset); // 00011111
+				dependencyDescriptor->template_id_offset = Utils::Bits::ReadBits(extenValue, extenLen, 6, bitOffset);
+				dependencyDescriptor->dt_cnt = 1 + Utils::Bits::ReadBits(extenValue, extenLen, 5, bitOffset);
 
 				// template_layers
 				uint8_t temporalId = 0;

@@ -234,6 +234,25 @@ namespace Utils
 
 			return value;
 		}
+
+		static uint32_t ReadBitsNonSymmetric(uint8_t* data, uint32_t dataLength, uint32_t bitCount, uint32_t& bitOffset)
+		{
+			uint32_t w = 0;
+			uint32_t x = bitCount;
+
+			while (x != 0)
+			{
+				x = x >> 1;
+				w++;
+			}
+			uint32_t m = (1 << w) - bitCount;
+			uint32_t v = ReadBits(data, dataLength, w - 1, bitOffset);
+			if (v < m)
+				return v;
+			uint8_t extra_bit = ReadBits(data, dataLength, 1, bitOffset);
+			return (v << 1) - m + extra_bit;
+		}
+
 	};
 
 	class Crypto
