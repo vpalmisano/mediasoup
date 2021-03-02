@@ -131,7 +131,7 @@ namespace RTC
 			uint8_t custom_chains_flag : 1;
 			// template_dependency_structure
 			uint8_t template_id_offset : 6;
-			uint8_t dt_cnt;
+			uint8_t DtCnt;
 			uint8_t templateCnt;
 			// template_layers
 			uint8_t TemplateSpatialId[3]; // FIXME array sizes = ?
@@ -142,6 +142,7 @@ namespace RTC
 			uint8_t TemplateFdiff[3][3];
 			uint8_t TemplateFdiffCnt[3];
 			uint8_t FrameFdiff[3];
+			uint8_t chain_cnt;
 			uint8_t decode_target_protected_by[3];
 			uint8_t template_chain_fdiff[3][3];
 			uint8_t DecodeTargetSpatialId[3];
