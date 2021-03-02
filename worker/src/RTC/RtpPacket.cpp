@@ -1034,7 +1034,7 @@ namespace RTC
 					for (uint8_t dtIndex = 0; dtIndex < dependencyDescriptor->dt_cnt; dtIndex++)
 					{
 						// See table A.1 below for meaning of DTI values.
-						MS_ASSERT(templateIndex*dtIndex < sizeof(dependencyDescriptor->template_dti),
+						MS_ASSERT((templateIndex + 1u) * (dtIndex + 1u) < sizeof(dependencyDescriptor->template_dti),
 							"invalid templateIndex, dtIndex inside DependencyDescriptor extension");
 						dependencyDescriptor->template_dti[templateIndex][dtIndex] = Utils::Bits::ReadBits(extenValue, extenLen, 2, bitOffset);
 					}
@@ -1048,7 +1048,7 @@ namespace RTC
 					while (fdiff_follows_flag)
 					{
 						uint8_t fdiff_minus_one = Utils::Bits::ReadBits(extenValue, extenLen, 4, bitOffset);
-						MS_ASSERT(templateIndex*fdiffCnt < sizeof(dependencyDescriptor->TemplateFdiff),
+						MS_ASSERT((templateIndex + 1u) * (fdiffCnt + 1u) < sizeof(dependencyDescriptor->TemplateFdiff),
 							"invalid templateIndex, fdiffCnt inside DependencyDescriptor extension");
 						dependencyDescriptor->TemplateFdiff[templateIndex][fdiffCnt] = fdiff_minus_one + 1;
 						fdiffCnt++;
@@ -1080,7 +1080,7 @@ namespace RTC
 					}
 					for (uint8_t templateIndex = 0; templateIndex < dependencyDescriptor->templateCnt; templateIndex++) {
 						for (uint8_t chainIndex = 0; chainIndex < chain_cnt; chainIndex++) {
-							MS_ASSERT(templateIndex*chainIndex < sizeof(dependencyDescriptor->template_chain_fdiff),
+							MS_ASSERT((templateIndex + 1u) * (chainIndex + 1u) < sizeof(dependencyDescriptor->template_chain_fdiff),
 								"invalid templateIndex, chainIndex inside DependencyDescriptor extension");
 							dependencyDescriptor->template_chain_fdiff[templateIndex][chainIndex] = Utils::Bits::ReadBits(extenValue, extenLen, 4, bitOffset);
 						}
