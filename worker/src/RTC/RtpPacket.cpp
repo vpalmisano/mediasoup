@@ -986,7 +986,6 @@ namespace RTC
 		if (extenLen > 3)
 		{
 			// extended_descriptor_fields
-
 			dependencyDescriptor->template_dependency_structure_present_flag = Utils::Bits::ReadBits(extenValue, extenLen, 1, bitOffset);	// 10000000
 			dependencyDescriptor->active_decode_targets_present_flag = Utils::Bits::ReadBits(extenValue, extenLen, 1, bitOffset);			// 01000000
 			dependencyDescriptor->custom_dtis_flag = Utils::Bits::ReadBits(extenValue, extenLen, 1, bitOffset);								// 00100000
@@ -997,10 +996,7 @@ namespace RTC
 			{
 				// template_dependency_structure
 				dependencyDescriptor->template_id_offset = Utils::Bits::ReadBits(extenValue, extenLen, 6, bitOffset); // 00000111 + 11100000
-				//((byte & 0x07) << 3) + ((extenValue[offset + 1] >> 5) & 0x07); 
 				dependencyDescriptor->dt_cnt = 1 + Utils::Bits::ReadBits(extenValue, extenLen, 5, bitOffset); // 00011111
-				//(extenValue[offset + 1] & 0x1f); 
-				//offset += 2;
 
 				// template_layers
 				uint8_t temporalId = 0;
