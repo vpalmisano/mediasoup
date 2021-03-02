@@ -1001,14 +1001,13 @@ namespace RTC
 				// template_layers
 				uint8_t temporalId = 0;
 				uint8_t spatialId = 0;
-				uint8_t templateCnt = 0;
 				uint8_t next_layer_idc = 0;
 				do {
-					MS_ASSERT(templateCnt < sizeof(dependencyDescriptor->TemplateSpatialId),
+					MS_ASSERT(dependencyDescriptor->templateCnt < sizeof(dependencyDescriptor->TemplateSpatialId),
 						"invalid templateCnt inside DependencyDescriptor extension");
-					dependencyDescriptor->TemplateSpatialId[templateCnt] = spatialId;
-					dependencyDescriptor->TemplateTemporalId[templateCnt] = temporalId;
-					templateCnt++;
+					dependencyDescriptor->TemplateSpatialId[dependencyDescriptor->templateCnt] = spatialId;
+					dependencyDescriptor->TemplateTemporalId[dependencyDescriptor->templateCnt] = temporalId;
+					dependencyDescriptor->templateCnt++;
 
 					next_layer_idc = Utils::Bits::ReadBits(extenValue, extenLen, 2, bitOffset);
 					// next_layer_idc == 0 - same sid and tid
@@ -1030,7 +1029,7 @@ namespace RTC
 				dependencyDescriptor->maxSpatialId = spatialId;
 
 				// template_dtis
-				for (uint8_t templateIndex = 0; templateIndex < templateCnt; templateIndex++)
+				for (uint8_t templateIndex = 0; templateIndex < dependencyDescriptor->templateCnt; templateIndex++)
 				{
 					for (uint8_t dtIndex = 0; dtIndex < dependencyDescriptor->dt_cnt; dtIndex++)
 					{
@@ -1040,7 +1039,7 @@ namespace RTC
 				}
 
 				// template_fdiffs
-				for (uint8_t templateIndex = 0; templateIndex < templateCnt; templateIndex++)
+				for (uint8_t templateIndex = 0; templateIndex < dependencyDescriptor->templateCnt; templateIndex++)
 				{
 					uint8_t fdiffCnt = 0;
 					uint8_t fdiff_follows_flag = Utils::Bits::ReadBits(extenValue, extenLen, 1, bitOffset);
@@ -1073,7 +1072,7 @@ namespace RTC
 				for (dtIndex = 0; dtIndex < dependencyDescriptor->dt_cnt; dtIndex++) {
 					decode_target_protected_by[dtIndex] = ns(chain_cnt)
 				}
-				for (templateIndex = 0; templateIndex < TemplateCnt; templateIndex++) {
+				for (templateIndex = 0; templateIndex < dependencyDescriptor->TemplateCnt; templateIndex++) {
 					for (chainIndex = 0; chainIndex < chain_cnt; chainIndex++) {
 						template_chain_fdiff[templateIndex][chainIndex] = f(4)
 					}
@@ -1091,7 +1090,7 @@ namespace RTC
 				{
 					uint8_t spatialId = 0;
 					uint8_t temporalId = 0;
-					for (int templateIndex = 0; templateIndex < templateCnt; templateIndex++) {
+					for (int templateIndex = 0; templateIndex < dependencyDescriptor->templateCnt; templateIndex++) {
 					if (template_dti[templateIndex][dtIndex] != 0) {
 						if (TemplateSpatialId[templateIndex] > spatialId) {
 							spatialId = TemplateSpatialId[templateIndex];
@@ -1134,30 +1133,30 @@ namespace RTC
 		// frame_dependency_definition
 		/*
 		frame_dependency_definition() {
-			templateIndex = (frame_dependency_template_id + 64 - template_id_offset) % 64
-			If (templateIndex >= templateCnt) {
+			templateIndex = (dependencyDescriptor->frame_dependency_template_id + 64 - dependencyDescriptor->template_id_offset) % 64
+			If (templateIndex >= dependencyDescriptor->templateCnt) {
 				return  // error
 			}
-			FrameSpatialId = TemplateSpatialId[templateIndex]
-			FrameTemporalId = TemplateTemporalId[templateIndex]
+			FrameSpatialId = dependencyDescriptor->TemplateSpatialId[templateIndex]
+			FrameTemporalId = dependencyDescriptor->TemplateTemporalId[templateIndex]
 
 			if (custom_dtis_flag) {
 				frame_dtis()
 			} else {
-				frame_dti = template_dti[templateIndex]
+				frame_dti = dependencyDescriptor->template_dti[templateIndex]
 			}
 
 			if (custom_fdiffs_flag) {
 				frame_fdiffs()
 			} else {
-				FrameFdiffCnt = TemplateFdiffCnt[templateIndex]
-				FrameFdiff = TemplateFdiff[templateIndex]
+				FrameFdiffCnt = dependencyDescriptor->TemplateFdiffCnt[templateIndex]
+				FrameFdiff = dependencyDescriptor->TemplateFdiff[templateIndex]
 			}
 
 			if (custom_chains_flag) {
 				frame_chains()
 			} else {
-				frame_chain_fdiff = template_chain_fdiff[templateIndex]
+				frame_chain_fdiff = dependencyDescriptor->template_chain_fdiff[templateIndex]
 			}
 
 			if (resolutions_present_flag) {
@@ -1196,8 +1195,10 @@ namespace RTC
 
 			"  template_id_offset: %u\n"
 			"  dt_cnt: %u\n"
+			"  templateCnt: %u\n"
 			
-			"  maxTemporalId: %u maxSpatialId: %u\n"
+			"  maxTemporalId: %u"
+			"  maxSpatialId: %u\n"
 			,
 			length,
 			// mandatory
@@ -1213,8 +1214,10 @@ namespace RTC
 			// template_dependency_structure
 			dependencyDescriptor.template_id_offset,
 			dependencyDescriptor.dt_cnt,
+			dependencyDescriptor.templateCnt,
 			
-			dependencyDescriptor.maxTemporalId, dependencyDescriptor.maxSpatialId
+			dependencyDescriptor.maxTemporalId, 
+			dependencyDescriptor.maxSpatialId
 		);
 
 		MS_DUMP("  TemplateSpatialId");

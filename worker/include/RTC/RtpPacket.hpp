@@ -132,7 +132,7 @@ namespace RTC
 			// template_dependency_structure
 			uint8_t template_id_offset : 6;
 			uint8_t dt_cnt;
-			//DtCnt = dt_cnt_minus_one + 1
+			uint8_t templateCnt;
 			//template_layers
 			uint8_t TemplateSpatialId[3]; // FIXME array sizes = ?
 			uint8_t TemplateTemporalId[3];
