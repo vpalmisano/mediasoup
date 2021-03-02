@@ -193,6 +193,47 @@ namespace Utils
 		{
 			return static_cast<size_t>(__builtin_popcount(mask));
 		}
+
+		static uint32_t ReadBits(uint8_t* data, uint32_t dataLength, uint32_t bitCount, uint32_t& bitOffset)
+		{
+			uint32_t value = 0;
+			uint32_t byteOffset = bitOffset / 8;
+			uint8_t skipBitsLeft = bitOffset - byteOffset * 8;
+			uint32_t readBits = 0;
+
+			// limit the number of output bits to uint32_t
+			bitCount = bitCount > 32 ? 32 : bitCount;
+
+			while (readBits < bitCount && byteOffset < dataLength)
+			{
+				uint8_t byte = data[byteOffset];
+				
+				// skips the the first offset in the first iteration
+				if (skipBitsLeft > 0)
+				{
+					byte &= (2 << (7 - skipBitsLeft)) - 1;
+				}
+
+				// skips the last bits in the last iteration
+				uint8_t skipBitsRight = 0;
+				if (bitCount - readBits + skipBitsLeft < 8)
+				{
+					skipBitsRight = 8 - (bitCount - readBits + skipBitsLeft);
+					byte >>= skipBitsRight;
+				}
+
+				value = (value << (8 - skipBitsLeft - skipBitsRight)) | byte;
+				
+				readBits += 8 - skipBitsLeft - skipBitsRight;
+				byteOffset++;
+				skipBitsLeft = 0;
+			}
+
+			// updates the value passed by reference
+			bitOffset += readBits;
+
+			return value;
+		}
 	};
 
 	class Crypto

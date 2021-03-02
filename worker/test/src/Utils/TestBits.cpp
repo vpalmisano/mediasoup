@@ -20,3 +20,34 @@ SCENARIO("Utils::Bits::CountSetBits()")
 	mask = 0b1111111111111111;
 	REQUIRE(Utils::Bits::CountSetBits(mask) == 16);
 }
+
+SCENARIO("Utils::Bits::ReadBits()")
+{
+	uint8_t data[5] = {
+		0b10110000,
+		0b00001111,
+		0b11110011,
+		0b00001011,
+		0b11001111
+	};
+	uint32_t bitOffset = 0;
+
+	REQUIRE(Utils::Bits::ReadBits(data, sizeof(data), 1, bitOffset) == 0b1);
+	REQUIRE(bitOffset == 1);
+	REQUIRE(Utils::Bits::ReadBits(data, sizeof(data), 2, bitOffset) == 0b01);
+	REQUIRE(bitOffset == 3);
+	REQUIRE(Utils::Bits::ReadBits(data, sizeof(data), 2, bitOffset) == 0b10);
+	REQUIRE(bitOffset == 5);
+	REQUIRE(Utils::Bits::ReadBits(data, sizeof(data), 3, bitOffset) == 0b000);
+	REQUIRE(bitOffset == 8);
+
+	REQUIRE(Utils::Bits::ReadBits(data, sizeof(data), 5, bitOffset) == 0b00001);
+	REQUIRE(bitOffset == 13);
+	REQUIRE(Utils::Bits::ReadBits(data, sizeof(data), 7, bitOffset) == 0b1111111);
+	REQUIRE(bitOffset == 20);
+	REQUIRE(Utils::Bits::ReadBits(data, sizeof(data), 15, bitOffset) == 0b001100001011110);
+	REQUIRE(bitOffset == 35);
+	// check reading out of bounds
+	REQUIRE(Utils::Bits::ReadBits(data, sizeof(data), 8, bitOffset) == 0b1111);
+	REQUIRE(bitOffset == 40);
+}

@@ -975,42 +975,38 @@ namespace RTC
 		length = extenLen;
 
 		// TODO https://aomediacodec.github.io/av1-rtp-spec/#a82-syntax		
-		size_t offset{ 0 };
-		uint8_t byte = extenValue[offset];
+		uint32_t bitOffset{ 0 };
 
 		// mandatory_descriptor_fields
-		dependencyDescriptor->start_of_frame = (byte >> 7) & 0x01;					// 10000000
-		dependencyDescriptor->end_of_frame = (byte >> 6) & 0x01;					// 01000000
-		dependencyDescriptor->frame_dependency_template_id = byte & 0x3f;			// 00111111
-		dependencyDescriptor->frame_number = (extenValue[offset + 1] << 8) + extenValue[offset + 2]; // 2 bytes
-		offset += 3;
+		dependencyDescriptor->start_of_frame = Utils::Bits::ReadBits(extenValue, extenLen, 1, bitOffset);				// 10000000
+		dependencyDescriptor->end_of_frame = Utils::Bits::ReadBits(extenValue, extenLen, 1, bitOffset);   				// 01000000
+		dependencyDescriptor->frame_dependency_template_id = Utils::Bits::ReadBits(extenValue, extenLen, 6, bitOffset); // 00111111
+		dependencyDescriptor->frame_number = Utils::Bits::ReadBits(extenValue, extenLen, 16, bitOffset); 				// 2 bytes
 		
 		if (extenLen > 3)
 		{
 			// extended_descriptor_fields
-			byte = extenValue[offset];
 
-			dependencyDescriptor->template_dependency_structure_present_flag = (byte >> 7) & 0x01; 	// 10000000
-			dependencyDescriptor->active_decode_targets_present_flag = (byte >> 6) & 0x01;			// 01000000
-			dependencyDescriptor->custom_dtis_flag = (byte >> 5) & 0x01;							// 00100000
-			dependencyDescriptor->custom_fdiffs_flag = (byte >> 4) & 0x01;							// 00010000
-			dependencyDescriptor->custom_chains_flag = (byte >> 3) & 0x01;							// 00001000
+			dependencyDescriptor->template_dependency_structure_present_flag = Utils::Bits::ReadBits(extenValue, extenLen, 1, bitOffset);	// 10000000
+			dependencyDescriptor->active_decode_targets_present_flag = Utils::Bits::ReadBits(extenValue, extenLen, 1, bitOffset);			// 01000000
+			dependencyDescriptor->custom_dtis_flag = Utils::Bits::ReadBits(extenValue, extenLen, 1, bitOffset);								// 00100000
+			dependencyDescriptor->custom_fdiffs_flag = Utils::Bits::ReadBits(extenValue, extenLen, 1, bitOffset);							// 00010000
+			dependencyDescriptor->custom_chains_flag = Utils::Bits::ReadBits(extenValue, extenLen, 1, bitOffset);							// 00001000
 			
 			if (dependencyDescriptor->template_dependency_structure_present_flag)
 			{
 				// template_dependency_structure
-				dependencyDescriptor->template_id_offset = ((byte & 0x07) << 3) + ((extenValue[offset + 1] >> 5) & 0x07); // 00000111 + 11100000
-				dependencyDescriptor->dt_cnt = 1 + (extenValue[offset + 1] & 0x1f); // 00011111
-				offset += 2;
-				MS_ASSERT(extenLen >= offset, "invalid offset inside DependencyDescriptor extension");
-				byte = extenValue[offset];
+				dependencyDescriptor->template_id_offset = Utils::Bits::ReadBits(extenValue, extenLen, 6, bitOffset); // 00000111 + 11100000
+				//((byte & 0x07) << 3) + ((extenValue[offset + 1] >> 5) & 0x07); 
+				dependencyDescriptor->dt_cnt = 1 + Utils::Bits::ReadBits(extenValue, extenLen, 5, bitOffset); // 00011111
+				//(extenValue[offset + 1] & 0x1f); 
+				//offset += 2;
 
 				// template_layers
 				uint8_t temporalId = 0;
 				uint8_t spatialId = 0;
 				uint8_t templateCnt = 0;
 				uint8_t next_layer_idc = 0;
-				int bitOffset = 6;
 				do {
 					MS_ASSERT(templateCnt < sizeof(dependencyDescriptor->TemplateSpatialId),
 						"invalid templateCnt inside DependencyDescriptor extension");
@@ -1018,16 +1014,7 @@ namespace RTC
 					dependencyDescriptor->TemplateTemporalId[templateCnt] = temporalId;
 					templateCnt++;
 
-					next_layer_idc = (byte >> bitOffset) & 0x03;
-					bitOffset -= 2;
-					if (bitOffset < 0)
-					{
-						offset++;
-						MS_ASSERT(extenLen >= offset, "invalid offset inside DependencyDescriptor extension");
-						byte = extenValue[offset];
-						bitOffset = 6;
-					}
-
+					next_layer_idc = Utils::Bits::ReadBits(extenValue, extenLen, 2, bitOffset);
 					// next_layer_idc == 0 - same sid and tid
 					if (next_layer_idc == 1)
 					{
@@ -1047,31 +1034,24 @@ namespace RTC
 				dependencyDescriptor->maxSpatialId = spatialId;
 
 				// template_dtis
-				for (int templateIndex = 0; templateIndex < templateCnt; templateIndex++)
+				/* for (int templateIndex = 0; templateIndex < templateCnt; templateIndex++)
 				{
 					for (int dtIndex = 0; dtIndex < dependencyDescriptor->dt_cnt; dtIndex++)
 					{
 						// See table A.1 below for meaning of DTI values.
-						dependencyDescriptor->template_dti[templateIndex][dtIndex] = (byte >> bitOffset) & 0x03;
-						bitOffset -= 2;
-						if (bitOffset < 0)
-						{
-							offset++;
-							MS_ASSERT(extenLen >= offset, "invalid offset inside DependencyDescriptor extension");
-							byte = extenValue[offset];
-							bitOffset = 6;
-						}
+						dependencyDescriptor->template_dti[templateIndex][dtIndex] = Utils::Bits::ReadBits(extenValue, extenLen, 2, bitOffset);
 					}
-				}
+				} */
 
 				// template_fdiffs
 				/* uint8_t frameFdiffCnt = 0;
-				next_fdiff_size = f(2)
-				while (next_fdiff_size) {
-					fdiff_minus_one = f(4 * next_fdiff_size);
-					FrameFdiff[frameFdiffCnt] = fdiff_minus_one + 1;
+				uint8_t next_fdiff_size = Utils::Bits::ReadBits(extenValue, extenLen, 2, bitOffset);
+				while (next_fdiff_size)
+				{
+					uint8_t fdiff_minus_one = Utils::Bits::ReadBits(extenValue, extenLen, 4 * next_fdiff_size, bitOffset);
+					//FrameFdiff[frameFdiffCnt] = fdiff_minus_one + 1;
 					frameFdiffCnt++;
-					next_fdiff_size = f(2)
+					next_fdiff_size = Utils::Bits::ReadBits(extenValue, extenLen, 2, bitOffset);
 				} */
 
 				// template_chains
