@@ -133,7 +133,7 @@ namespace RTC
 			uint8_t template_id_offset : 6;
 			uint8_t dt_cnt;
 			uint8_t templateCnt;
-			//template_layers
+			// template_layers
 			uint8_t TemplateSpatialId[3]; // FIXME array sizes = ?
 			uint8_t TemplateTemporalId[3];
 			uint8_t maxTemporalId;
@@ -142,20 +142,12 @@ namespace RTC
 			uint8_t TemplateFdiff[3][3];
 			uint8_t TemplateFdiffCnt[3];
 			uint8_t FrameFdiff[3];
-			//template_dtis()
-			//template_fdiffs()
-			//template_chains()
-			//decode_target_layers()
+			uint8_t decode_target_protected_by[3];
+			uint8_t template_chain_fdiff[3][3];
+			uint8_t DecodeTargetSpatialId[3];
+			uint8_t DecodeTargetTemporalId[3];
 			uint8_t resolutions_present_flag : 1;
-			//render_resolutions()
-
-			uint8_t active_decode_targets_bitmask;
-
-			// extended_descriptor_fields
-
-			// frame_dependency_definition
-
-			// zero_padding = f(sz * 8 - TotalConsumedBits)
+			uint32_t active_decode_targets_bitmask;
 		};
 
 	public:

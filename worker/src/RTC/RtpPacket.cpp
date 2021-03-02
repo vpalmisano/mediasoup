@@ -1034,6 +1034,8 @@ namespace RTC
 					for (uint8_t dtIndex = 0; dtIndex < dependencyDescriptor->dt_cnt; dtIndex++)
 					{
 						// See table A.1 below for meaning of DTI values.
+						MS_ASSERT(templateIndex*dtIndex < sizeof(dependencyDescriptor->template_dti),
+							"invalid templateIndex, dtIndex inside DependencyDescriptor extension");
 						dependencyDescriptor->template_dti[templateIndex][dtIndex] = Utils::Bits::ReadBits(extenValue, extenLen, 2, bitOffset);
 					}
 				}
@@ -1046,6 +1048,8 @@ namespace RTC
 					while (fdiff_follows_flag)
 					{
 						uint8_t fdiff_minus_one = Utils::Bits::ReadBits(extenValue, extenLen, 4, bitOffset);
+						MS_ASSERT(templateIndex*fdiffCnt < sizeof(dependencyDescriptor->TemplateFdiff),
+							"invalid templateIndex, fdiffCnt inside DependencyDescriptor extension");
 						dependencyDescriptor->TemplateFdiff[templateIndex][fdiffCnt] = fdiff_minus_one + 1;
 						fdiffCnt++;
 						fdiff_follows_flag = Utils::Bits::ReadBits(extenValue, extenLen, 1, bitOffset);
@@ -1059,68 +1063,65 @@ namespace RTC
 				while (next_fdiff_size)
 				{
 					uint8_t fdiff_minus_one = Utils::Bits::ReadBits(extenValue, extenLen, 4 * next_fdiff_size, bitOffset);
+					MS_ASSERT(frameFdiffCnt < sizeof(dependencyDescriptor->FrameFdiff),
+							"invalid frameFdiffCnt inside DependencyDescriptor extension");
 					dependencyDescriptor->FrameFdiff[frameFdiffCnt] = fdiff_minus_one + 1;
 					frameFdiffCnt++;
 					next_fdiff_size = Utils::Bits::ReadBits(extenValue, extenLen, 2, bitOffset);
 				}
 
 				// template_chains
-				/* chain_cnt = ns(dependencyDescriptor->dt_cnt + 1)
-				if (chain_cnt == 0) {
-					return
-				}
-				for (dtIndex = 0; dtIndex < dependencyDescriptor->dt_cnt; dtIndex++) {
-					decode_target_protected_by[dtIndex] = ns(chain_cnt)
-				}
-				for (templateIndex = 0; templateIndex < dependencyDescriptor->TemplateCnt; templateIndex++) {
-					for (chainIndex = 0; chainIndex < chain_cnt; chainIndex++) {
-						template_chain_fdiff[templateIndex][chainIndex] = f(4)
+				uint8_t chain_cnt = Utils::Bits::ReadBitsNonSymmetric(extenValue, extenLen, dependencyDescriptor->dt_cnt + 1, bitOffset);
+				if (chain_cnt != 0) {
+					for (uint8_t dtIndex = 0; dtIndex < dependencyDescriptor->dt_cnt; dtIndex++) {
+						MS_ASSERT(dtIndex < sizeof(dependencyDescriptor->decode_target_protected_by),
+							"invalid dtIndex inside DependencyDescriptor extension");
+						dependencyDescriptor->decode_target_protected_by[dtIndex] = Utils::Bits::ReadBitsNonSymmetric(extenValue, extenLen, chain_cnt, bitOffset);
 					}
-				} */
-
-				/*
-				// frame_chains
-				for (chainIndex = 0; chainIndex < chain_cnt; chainIndex++) {
-					frame_chain_fdiff[chainIndex] = f(8)
+					for (uint8_t templateIndex = 0; templateIndex < dependencyDescriptor->templateCnt; templateIndex++) {
+						for (uint8_t chainIndex = 0; chainIndex < chain_cnt; chainIndex++) {
+							MS_ASSERT(templateIndex*chainIndex < sizeof(dependencyDescriptor->template_chain_fdiff),
+								"invalid templateIndex, chainIndex inside DependencyDescriptor extension");
+							dependencyDescriptor->template_chain_fdiff[templateIndex][chainIndex] = Utils::Bits::ReadBits(extenValue, extenLen, 4, bitOffset);
+						}
+					}
 				}
-				*/
 
 				// decode_target_layers
-				/* for (int dtIndex = 0; dtIndex < dependencyDescriptor->dt_cnt; dtIndex++)
+				for (uint8_t dtIndex = 0; dtIndex < dependencyDescriptor->dt_cnt; dtIndex++)
 				{
 					uint8_t spatialId = 0;
 					uint8_t temporalId = 0;
-					for (int templateIndex = 0; templateIndex < dependencyDescriptor->templateCnt; templateIndex++) {
-					if (template_dti[templateIndex][dtIndex] != 0) {
-						if (TemplateSpatialId[templateIndex] > spatialId) {
-							spatialId = TemplateSpatialId[templateIndex];
-						}
-						if (TemplateTemporalId[templateIndex] > temporalId) {
-							temporalId = TemplateTemporalId[templateIndex];
+					for (uint8_t templateIndex = 0; templateIndex < dependencyDescriptor->templateCnt; templateIndex++)
+					{
+						if (dependencyDescriptor->template_dti[templateIndex][dtIndex] != 0)
+						{
+							if (dependencyDescriptor->TemplateSpatialId[templateIndex] > spatialId) {
+								spatialId = dependencyDescriptor->TemplateSpatialId[templateIndex];
+							}
+							if (dependencyDescriptor->TemplateTemporalId[templateIndex] > temporalId) {
+								temporalId = dependencyDescriptor->TemplateTemporalId[templateIndex];
+							}
 						}
 					}
-					}
-					DecodeTargetSpatialId[dtIndex] = spatialId;
-					DecodeTargetTemporalId[dtIndex] = temporalId;
-				} */
+					dependencyDescriptor->DecodeTargetSpatialId[dtIndex] = spatialId;
+					dependencyDescriptor->DecodeTargetTemporalId[dtIndex] = temporalId;
+				}
 
-
-				/*
-				resolutions_present_flag = f(1)
-				if (resolutions_present_flag) {
-					render_resolutions()
-				} */
+				dependencyDescriptor->resolutions_present_flag = Utils::Bits::ReadBits(extenValue, extenLen, 1, bitOffset);
+				if (dependencyDescriptor->resolutions_present_flag)
+				{
+					//render_resolutions()
+				}
 
 				//- template_dependency_structure
-
-				//dependencyDescriptor->active_decode_targets_bitmask = (1 << dependencyDescriptor->dt_cnt) - 1
+				dependencyDescriptor->active_decode_targets_bitmask = (1 << dependencyDescriptor->dt_cnt) - 1;
 			}
 
 			if (dependencyDescriptor->active_decode_targets_present_flag)
 			{
-				//dependencyDescriptor->active_decode_targets_bitmask = f(dependencyDescriptor->dt_cnt)
+				dependencyDescriptor->active_decode_targets_bitmask = Utils::Bits::ReadBits(extenValue, extenLen, dependencyDescriptor->dt_cnt, bitOffset);
 			}
-
 		}
 		else
 		{
@@ -1199,6 +1200,9 @@ namespace RTC
 			
 			"  maxTemporalId: %u"
 			"  maxSpatialId: %u\n"
+
+			"  resolutions_present_flag: %u\n"
+			"  active_decode_targets_bitmask: %u\n"
 			,
 			length,
 			// mandatory
@@ -1217,7 +1221,10 @@ namespace RTC
 			dependencyDescriptor.templateCnt,
 			
 			dependencyDescriptor.maxTemporalId, 
-			dependencyDescriptor.maxSpatialId
+			dependencyDescriptor.maxSpatialId,
+
+			dependencyDescriptor.resolutions_present_flag,
+			dependencyDescriptor.active_decode_targets_bitmask
 		);
 
 		MS_DUMP("  TemplateSpatialId");
@@ -1260,6 +1267,33 @@ namespace RTC
 		for (uint8_t i=0; i < sizeof(dependencyDescriptor.FrameFdiff); i++)
 		{
 			MS_DUMP("    [%u] %u", i, dependencyDescriptor.FrameFdiff[i]);
+		}
+
+		MS_DUMP("  decode_target_protected_by");
+		for (uint8_t i=0; i < sizeof(dependencyDescriptor.decode_target_protected_by); i++)
+		{
+			MS_DUMP("    [%u] %u", i, dependencyDescriptor.decode_target_protected_by[i]);
+		}
+
+		MS_DUMP("  template_chain_fdiff");
+		for (uint8_t i=0; i<3; i++)
+		{
+			for (uint8_t j=0; j<3; j++)
+			{
+				MS_DUMP("    [%u][%u] %u", i, j, dependencyDescriptor.template_chain_fdiff[i][j]);
+			}
+		}
+
+		MS_DUMP("  DecodeTargetSpatialId");
+		for (uint8_t i=0; i < sizeof(dependencyDescriptor.DecodeTargetSpatialId); i++)
+		{
+			MS_DUMP("    [%u] %u", i, dependencyDescriptor.DecodeTargetSpatialId[i]);
+		}
+		
+		MS_DUMP("  DecodeTargetTemporalId");
+		for (uint8_t i=0; i < sizeof(dependencyDescriptor.DecodeTargetTemporalId); i++)
+		{
+			MS_DUMP("    [%u] %u", i, dependencyDescriptor.DecodeTargetTemporalId[i]);
 		}
 
 	}
