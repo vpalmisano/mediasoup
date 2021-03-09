@@ -138,7 +138,7 @@
       'conditions': [
         [ 'use_openssl == 1', {
           'dependencies': [
-            '<(DEPTH)/deps/openssl/openssl.gyp:openssl',
+            # '<(DEPTH)/deps/openssl/openssl.gyp:openssl',
           ],
           'sources!': [
             'srtp/crypto/cipher/aes_icm.c',

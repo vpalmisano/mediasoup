@@ -1,11 +1,14 @@
 {
   'target_defaults': {
     'type': 'executable',
+    'variables': {
+        'pkg-config': 'pkg-config' 
+    },
     'dependencies':
     [
       'deps/netstring/netstring.gyp:netstring',
       'deps/libuv/uv.gyp:libuv',
-      'deps/openssl/openssl.gyp:openssl',
+      # 'deps/openssl/openssl.gyp:openssl',
       'deps/libsrtp/libsrtp.gyp:libsrtp',
       'deps/usrsctp/usrsctp.gyp:usrsctp',
       'deps/libwebrtc/libwebrtc.gyp:libwebrtc',
@@ -279,7 +282,15 @@
       }],
 
       [ 'OS in "linux freebsd"', {
-        'ldflags': [ '-Wl,--whole-archive <(libopenssl) -Wl,--no-whole-archive' ]
+        'cflags': [
+            '<!@(<(pkg-config) --cflags libssl libcrypto)',
+        ],
+        'ldflags': [
+            '<!@(<(pkg-config) --libs-only-L --libs-only-other libssl libcrypto)',
+        ],
+        'libraries': [
+            '<!@(<(pkg-config) --libs-only-l libssl libcrypto)',
+        ],
       }],
 
       [ 'OS in "freebsd"', {

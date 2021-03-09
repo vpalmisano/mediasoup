@@ -4,7 +4,7 @@
     [
       'deps/abseil-cpp/abseil-cpp.gyp:abseil',
       '../libuv/uv.gyp:libuv',
-      '../openssl/openssl.gyp:openssl'
+      # '../openssl/openssl.gyp:openssl'
     ],
     'direct_dependent_settings': {
       'include_dirs':

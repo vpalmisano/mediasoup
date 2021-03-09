@@ -10,7 +10,7 @@
     'dependencies': [
       # We need our own openssl dependency (required if SCTP_USE_OPENSSL_SHA1
       # is defined).
-      '../openssl/openssl.gyp:openssl',
+      # '../openssl/openssl.gyp:openssl',
     ],
     'defines': [
       'SCTP_PROCESS_LEVEL_LOCKS',
