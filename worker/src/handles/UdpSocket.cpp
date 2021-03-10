@@ -126,7 +126,10 @@ void UdpSocket::Send(
 	if (this->closed)
 	{
 		if (cb)
+		{
 			(*cb)(false);
+			delete cb;
+		}
 
 		return;
 	}
@@ -134,7 +137,10 @@ void UdpSocket::Send(
 	if (len == 0)
 	{
 		if (cb)
+		{
 			(*cb)(false);
+			delete cb;
+		}
 
 		return;
 	}
@@ -154,7 +160,6 @@ void UdpSocket::Send(
 		if (cb)
 		{
 			(*cb)(true);
-
 			delete cb;
 		}
 
@@ -170,7 +175,6 @@ void UdpSocket::Send(
 		if (cb)
 		{
 			(*cb)(false);
-
 			delete cb;
 		}
 
@@ -289,7 +293,6 @@ inline void UdpSocket::OnUvSend(int status, UdpSocket::onSendCallback* cb)
 		if (cb)
 		{
 			(*cb)(true);
-
 			delete cb;
 		}
 	}
@@ -302,7 +305,6 @@ inline void UdpSocket::OnUvSend(int status, UdpSocket::onSendCallback* cb)
 		if (cb)
 		{
 			(*cb)(false);
-
 			delete cb;
 		}
 	}
