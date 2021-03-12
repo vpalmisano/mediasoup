@@ -2337,7 +2337,7 @@ namespace RTC
 				// provide it with more available bitrate to choose its preferred layers.
 				for (uint8_t i{ 1u }; i <= priority; ++i)
 				{
-					uint32_t usedBitrate;
+					uint32_t usedBitrate = 0;
 
 					switch (bweType)
 					{
