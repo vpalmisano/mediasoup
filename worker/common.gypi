@@ -24,7 +24,7 @@
     {
       'Release':
       {
-        'cflags': [ '-O2', '-Wno-unknown-warning-option', '-fPIC' ]
+        'cflags': [ '-g', '-O2', '-Wno-unknown-warning-option', '-fPIC' ]
       },
       'Debug':
       {
