@@ -358,7 +358,7 @@ namespace RTC
 			this->bitrates.maxBitrate        = newMaxBitrate;
 		}
 
-		MS_WARN_TAG(bwe,
+		MS_DEBUG_DEV(
 		  "[desiredBitrate:%" PRIu32 ", desiredBitrateTrend:%" PRIu32 ", startBitrate:%" PRIu32
 		  ", minBitrate:%" PRIu32 ", maxBitrate:%" PRIu32 ", maxPaddingBitrate:%" PRIu32 "]",
 		  this->bitrates.desiredBitrate,
