@@ -101,7 +101,8 @@ namespace RTC
 		int16_t provisionalTargetSpatialLayer{ -1 };
 		int16_t provisionalTargetTemporalLayer{ -1 };
 		std::unique_ptr<RTC::Codecs::EncodingContext> encodingContext;
-		uint64_t lastBweDowngradeAtMs{ 0u }; // Last time we moved to lower spatial layer due to BWE.
+		uint64_t lastBweDowngradeAtMs{ 0u }; // Last time we moved to lower layer due to BWE.
+		uint64_t lastBweUpgradeAtMs{ 0u };   // Last time we moved to upper layer due to BWE.
 	};
 } // namespace RTC
 

@@ -12,8 +12,10 @@ namespace RTC
 {
 	/* Static. */
 
-	static constexpr uint64_t BweDowngradeConservativeMs{ 10000u }; // In ms.
+	static constexpr uint64_t BweDowngradeConservativeMs{ 30000u }; // In ms.
+	static constexpr uint64_t BweUpgradeConservativeMs{ 10000u };   // In ms.
 	static constexpr uint64_t BweDowngradeMinActiveMs{ 8000u };     // In ms.
+	static constexpr uint64_t BweUpgradeMinActiveMs{ 8000u };       // In ms.
 
 	/* Instance methods. */
 
@@ -391,12 +393,13 @@ namespace RTC
 		{
 			// If this is higher than current spatial layer and we moved to to current spatial
 			// layer due to BWE limitations, check how much it has elapsed since then.
-			if (nowMs - this->lastBweDowngradeAtMs < BweDowngradeConservativeMs)
+			if (nowMs - this->lastBweDowngradeAtMs < BweDowngradeConservativeMs || nowMs - this->lastBweUpgradeAtMs < BweUpgradeConservativeMs)
 			{
 				if (this->provisionalTargetSpatialLayer > -1 && spatialLayer > this->encodingContext->GetCurrentSpatialLayer())
 				{
 					MS_DEBUG_DEV(
-					  "avoid upgrading to spatial layer %" PRIi16 " due to recent BWE downgrade", spatialLayer);
+					  "avoid upgrading to spatial layer %" PRIi16 " due to recent BWE up/downgrade",
+					  spatialLayer);
 
 					goto done;
 				}
@@ -411,6 +414,18 @@ namespace RTC
 			// Check bitrate of every temporal layer.
 			for (; temporalLayer < this->producerRtpStream->GetTemporalLayers(); ++temporalLayer)
 			{
+				if (nowMs - this->lastBweDowngradeAtMs < BweDowngradeConservativeMs || nowMs - this->lastBweUpgradeAtMs < BweUpgradeConservativeMs)
+				{
+					if (this->provisionalTargetTemporalLayer > -1 && temporalLayer > this->encodingContext->GetCurrentTemporalLayer())
+					{
+						MS_DEBUG_DEV(
+						  "avoid upgrading to temporal layer %" PRIi16 " due to recent BWE up/downgrade",
+						  temporalLayer);
+
+						goto done;
+					}
+				}
+
 				// Ignore temporal layers lower than the one we already have (taking into account
 				// the spatial layer too).
 				// clang-format off
@@ -506,18 +521,50 @@ namespace RTC
 			// clang-format off
 			if (
 				this->rtpStream->GetActiveMs() > BweDowngradeMinActiveMs &&
-				this->encodingContext->GetTargetSpatialLayer() < this->encodingContext->GetCurrentSpatialLayer() &&
-				this->encodingContext->GetCurrentSpatialLayer() <= this->preferredSpatialLayer
+				(
+					(
+						this->encodingContext->GetTargetSpatialLayer() < this->encodingContext->GetCurrentSpatialLayer() &&
+						this->encodingContext->GetCurrentSpatialLayer() <= this->preferredSpatialLayer
+					) ||
+					(
+						this->encodingContext->GetTargetTemporalLayer() < this->encodingContext->GetCurrentTemporalLayer() &&
+						this->encodingContext->GetCurrentTemporalLayer() <= this->preferredTemporalLayer
+					)
+				)
 			)
 			// clang-format on
 			{
 				MS_DEBUG_DEV(
-				  "possible target spatial layer downgrade (from %" PRIi16 " to %" PRIi16
+				  "possible target layer downgrade (from %" PRIi16 ":%" PRIi16 " to %" PRIi16 ":%" PRIi16
 				  ") due to BWE limitation",
 				  this->encodingContext->GetCurrentSpatialLayer(),
-				  this->encodingContext->GetTargetSpatialLayer());
+				  this->encodingContext->GetCurrentTemporalLayer(),
+				  this->encodingContext->GetTargetSpatialLayer(),
+				  this->encodingContext->GetTargetTemporalLayer());
 
 				this->lastBweDowngradeAtMs = DepLibUV::GetTimeMs();
+			}
+			else if (
+			  this->rtpStream->GetActiveMs() > BweUpgradeMinActiveMs &&
+			  ((this->encodingContext->GetTargetSpatialLayer() >
+			      this->encodingContext->GetCurrentSpatialLayer() &&
+			    this->encodingContext->GetCurrentSpatialLayer() > -1 &&
+			    this->encodingContext->GetCurrentSpatialLayer() <= this->preferredSpatialLayer) ||
+			   (this->encodingContext->GetTargetTemporalLayer() >
+			      this->encodingContext->GetCurrentTemporalLayer() &&
+			    this->encodingContext->GetCurrentTemporalLayer() > -1 &&
+			    this->encodingContext->GetCurrentTemporalLayer() <= this->preferredTemporalLayer)))
+			// clang-format on
+			{
+				MS_DEBUG_DEV(
+				  "possible target layer upgrade (from %" PRIi16 ":%" PRIi16 " to %" PRIi16 ":%" PRIi16
+				  ") due to BWE limitation",
+				  this->encodingContext->GetCurrentSpatialLayer(),
+				  this->encodingContext->GetCurrentTemporalLayer(),
+				  this->encodingContext->GetTargetSpatialLayer(),
+				  this->encodingContext->GetTargetTemporalLayer());
+
+				this->lastBweUpgradeAtMs = DepLibUV::GetTimeMs();
 			}
 		}
 	}
@@ -812,6 +859,7 @@ namespace RTC
 		MS_TRACE();
 
 		this->lastBweDowngradeAtMs = 0u;
+		this->lastBweUpgradeAtMs   = 0u;
 
 		this->rtpStream->Pause();
 
@@ -823,6 +871,7 @@ namespace RTC
 		MS_TRACE();
 
 		this->lastBweDowngradeAtMs = 0u;
+		this->lastBweUpgradeAtMs   = 0u;
 
 		this->rtpStream->Pause();
 
@@ -982,7 +1031,7 @@ namespace RTC
 		{
 			// If this is higher than current spatial layer and we moved to to current spatial
 			// layer due to BWE limitations, check how much it has elapsed since then.
-			if (nowMs - this->lastBweDowngradeAtMs < BweDowngradeConservativeMs)
+			if (nowMs - this->lastBweDowngradeAtMs < BweDowngradeConservativeMs || nowMs - this->lastBweUpgradeAtMs < BweUpgradeConservativeMs)
 			{
 				if (newTargetSpatialLayer > -1 && spatialLayer > this->encodingContext->GetCurrentSpatialLayer())
 					continue;
