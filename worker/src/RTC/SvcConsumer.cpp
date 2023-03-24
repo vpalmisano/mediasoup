@@ -13,7 +13,7 @@ namespace RTC
 	/* Static. */
 
 	static constexpr uint64_t BweDowngradeConservativeMs{ 30000u }; // In ms.
-	static constexpr uint64_t BweUpgradeConservativeMs{ 10000u };   // In ms.
+	static constexpr uint64_t BweUpgradeConservativeMs{ 30000u };   // In ms.
 	static constexpr uint64_t BweDowngradeMinActiveMs{ 8000u };     // In ms.
 	static constexpr uint64_t BweUpgradeMinActiveMs{ 8000u };       // In ms.
 
