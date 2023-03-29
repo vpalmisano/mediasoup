@@ -139,7 +139,7 @@
 * `Channel` and `PayloadChannel`: Optimize message format and JSON generation ([PR #893](https://github.com/versatica/mediasoup/pull/893)).
 * New C++ `ChannelMessageHandlers` class ([PR #894](https://github.com/versatica/mediasoup/pull/894)).
 * Fix Rust support after recent changes ([PR #898](https://github.com/versatica/mediasoup/pull/898)).
-* Modify `FeedbackRtpTransport` and tests to be compliant with latest libwebrtc code, make reference time to be unsigned ([PR #899](https://github.com/versatica/mediasoup/pull/899) by @penguinol and @sarumjanuch). 
+* Modify `FeedbackRtpTransport` and tests to be compliant with latest libwebrtc code, make reference time to be unsigned ([PR #899](https://github.com/versatica/mediasoup/pull/899) by @penguinol and @sarumjanuch).
 * Update NPM deps.
 
 
@@ -152,7 +152,7 @@
 
 * Do not clone RTP packets if not needed ([PR #850](https://github.com/versatica/mediasoup/pull/850)).
 * Fix DTLS related crash ([PR #867](https://github.com/versatica/mediasoup/pull/867)).
-* Update NPM deps. 
+* Update NPM deps.
 
 
 ### 3.10.3
@@ -441,7 +441,7 @@
 
 ### 3.7.6
 
-* `Transport`: Implement new `setMaxOutgoingBitrate()` method ([PR #555](https://github.com/versatica/mediasoup/pull/555) by @t-mullen). 
+* `Transport`: Implement new `setMaxOutgoingBitrate()` method ([PR #555](https://github.com/versatica/mediasoup/pull/555) by @t-mullen).
 * `SctpAssociation`: Don't warn if SCTP send buffer is full.
 * Rust: Update modules structure and other minor improvements for Rust version ([PR #558](https://github.com/versatica/mediasoup/pull/558)).
 * `mediasoup-worker`: Avoid duplicated basenames so that libmediasoup-worker is compilable on macOS ([PR #557](https://github.com/versatica/mediasoup/pull/557)).
@@ -684,7 +684,7 @@
 ### 3.6.8
 
 * Fix SRTP leak due to streams not being removed when a `Producer` or `Consumer` is closed.
-  - [PR #428](https://github.com/versatica/mediasoup/pull/428) (fixes issues #426). 
+  - [PR #428](https://github.com/versatica/mediasoup/pull/428) (fixes issues #426).
   - Credits to credits to @penguinol for reporting and initial work at [PR #427](https://github.com/versatica/mediasoup/pull/427).
 * Update `nlohmann::json` C++ dep to 3.8.0.
 * C++: Enhance `const` correctness.
@@ -811,7 +811,7 @@
 
 ### 3.5.5
 
-* `UdpSocket.cpp`: Revert `uv__udp_recvmmsg()` usage since it notifies about received UDP packets in reverse order. Feature on hold until fixed. 
+* `UdpSocket.cpp`: Revert `uv__udp_recvmmsg()` usage since it notifies about received UDP packets in reverse order. Feature on hold until fixed.
 
 
 ### 3.5.4
@@ -1128,7 +1128,7 @@
 
 ### 3.0.2
 
-* Simulcast: proper RTP stream switching by rewriting packet timestamp with a new timestamp calculated from the SenderReports' NTP relationship. 
+* Simulcast: proper RTP stream switching by rewriting packet timestamp with a new timestamp calculated from the SenderReports' NTP relationship.
 
 
 ### 3.0.1
@@ -1149,7 +1149,7 @@
 
 ### 2.6.18
 
-* Fix usage of a deallocated `RTC::TcpConnection` instance under heavy CPU usage due to mediasoup deleting the instance in the middle of a receiving iteration. 
+* Fix usage of a deallocated `RTC::TcpConnection` instance under heavy CPU usage due to mediasoup deleting the instance in the middle of a receiving iteration.
 
 
 ### 2.6.17
