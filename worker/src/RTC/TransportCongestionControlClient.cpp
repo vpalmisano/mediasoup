@@ -221,8 +221,8 @@ namespace RTC
 		{
 			if (!result.received)
 				lost_packets += 1;
-		}	
-		
+		}
+
 		if (expected_packets > 0)
 		{
 			this->UpdatePacketLoss(static_cast<double>(lost_packets) / expected_packets);
