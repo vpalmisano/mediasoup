@@ -20,7 +20,7 @@ namespace RTC
 
 	/* Class Static. */
 
-	const uint32_t RtpStreamSend::MinRetransmissionDelayMs{ 200u };
+	const uint32_t RtpStreamSend::MinRetransmissionDelayMs{ 2000u };
 	const uint32_t RtpStreamSend::MaxRetransmissionDelayForVideoMs{ 2000u };
 	const uint32_t RtpStreamSend::MaxRetransmissionDelayForAudioMs{ 1000u };
 
