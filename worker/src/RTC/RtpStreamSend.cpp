@@ -83,7 +83,14 @@ namespace RTC
 			// Packet arrived out of order, so we already have a slot allocated for it.
 			if (idx <= static_cast<uint16_t>(this->buffer.size() - 1))
 			{
-				MS_ASSERT(this->buffer[idx] == nullptr, "Must insert into empty slot");
+				/* MS_ASSERT(this->buffer[idx] == nullptr, "Must insert into empty slot"); */
+				if (this->buffer[idx] != nullptr) {
+					MS_WARN_TAG(
+						rtp,
+						"trying to insert into a not-empty slot, ignoring [seq:%" PRIu16 "]",
+						seq);
+					return;
+				}
 
 				this->buffer[idx] = storageItem;
 			}
@@ -92,6 +99,14 @@ namespace RTC
 				// Calculate how many elements would it be necessary to add when pushing new item
 				// to the back of the deque.
 				auto addToBack = static_cast<uint16_t>(seq - (this->startSeq + this->buffer.size() - 1));
+
+				if (this->buffer.size() + addToBack >= MaxSeq) {
+					MS_WARN_TAG(
+						rtp,
+						"trying to insert more than %" PRIu16 " entries, ignoring",
+						MaxSeq);
+					return;
+				}
 
 				// Packets can arrive out of order, add blank slots.
 				for (uint16_t i{ 1 }; i < addToBack; ++i)
@@ -106,6 +121,14 @@ namespace RTC
 			// Calculate how many elements would it be necessary to add when pushing new item
 			// to the front of the deque.
 			auto addToFront = static_cast<uint16_t>(this->startSeq - seq);
+
+			if (this->buffer.size() + addToFront >= MaxSeq) {
+				MS_WARN_TAG(
+					rtp,
+					"trying to insert more than %" PRIu16 " entries, ignoring",
+					MaxSeq);
+				return;
+			}
 
 			// Packets can arrive out of order, add blank slots.
 			for (uint16_t i{ 1 }; i < addToFront; ++i)
