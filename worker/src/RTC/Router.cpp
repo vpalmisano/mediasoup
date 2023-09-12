@@ -712,22 +712,28 @@ namespace RTC
 		packet->logger.routerId = this->id;
 
 		//
-		if (producer->GetKind() == RTC::Media::Kind::AUDIO) {
+		if (producer->GetKind() == RTC::Media::Kind::AUDIO)
+		{
 			uint8_t volume = 0;
-			bool voice = false;
+			bool voice     = false;
 
 			packet->ReadSsrcAudioLevel(volume, voice);
 
-			if (!this->audioConsumers.empty() && voice) {
+			if (!this->audioConsumers.empty() && voice)
+			{
 				uint64_t now = DepLibUV::GetTimeMs();
 
 				for (auto* consumer : this->audioConsumers)
 				{
-					if (consumer->producerId != producer->id && now - consumer->lastProducerChange > 200) {
+					if (consumer->producerId != producer->id && now - consumer->lastProducerChange > 200)
+					{
 						MS_WARN_TAG(
-							rtp,
-							"Changing producer for consumer [producerId:%s consumerId:%s] [volume:%d voice:%d]",
-							producer->id.c_str(), consumer->id.c_str(), volume, voice);
+						  rtp,
+						  "Changing producer for consumer [producerId:%s consumerId:%s] [volume:%d voice:%d]",
+						  producer->id.c_str(),
+						  consumer->id.c_str(),
+						  volume,
+						  voice);
 						this->OnTransportConsumerChangeProducer(NULL, consumer, producer);
 						consumer->lastProducerChange = now;
 					}
@@ -805,7 +811,8 @@ namespace RTC
 		  this->mapConsumerProducer.find(consumer) == this->mapConsumerProducer.end(),
 		  "Consumer already present in mapConsumerProducer");
 
-		if (consumer->GetKind() == RTC::Media::Kind::AUDIO) {
+		if (consumer->GetKind() == RTC::Media::Kind::AUDIO)
+		{
 			this->audioConsumers.insert(consumer);
 		}
 
@@ -846,7 +853,7 @@ namespace RTC
 		consumer->Pause();
 		/* for (const auto& stream : consumer->GetRtpStreams())
 		{
-			stream->Pause();
+		  stream->Pause();
 		} */
 
 		// Remove current producer.
@@ -887,9 +894,12 @@ namespace RTC
 		consumer->producerId = producer->id;
 
 		// Update the Consumer status based on the Producer status.
-		if (producer->IsPaused()) {
+		if (producer->IsPaused())
+		{
 			consumer->ProducerPaused();
-		} else {
+		}
+		else
+		{
 			consumer->Resume();
 		}
 
@@ -921,10 +931,10 @@ namespace RTC
 		// Provide the Consumer with the scores of all streams in the Producer.
 		consumer->ProducerRtpStreamScores(producer->GetRtpStreamScores());
 
-		//consumer->Resume();
+		// consumer->Resume();
 		/* for (const auto& stream : consumer->GetRtpStreams())
 		{
-			stream->Resume();
+		  stream->Resume();
 		} */
 	}
 
@@ -958,7 +968,8 @@ namespace RTC
 		// Remove the Consumer from the map.
 		this->mapConsumerProducer.erase(mapConsumerProducerIt);
 
-		if (consumer->GetKind() == RTC::Media::Kind::AUDIO) {
+		if (consumer->GetKind() == RTC::Media::Kind::AUDIO)
+		{
 			this->audioConsumers.erase(consumer);
 		}
 	}

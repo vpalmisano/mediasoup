@@ -180,7 +180,7 @@ namespace RTC
 		// Passed by argument.
 		const std::string id;
 		std::string producerId;
-		uint64_t lastProducerChange{0};
+		uint64_t lastProducerChange{ 0 };
 
 	protected:
 		// Passed by argument.
