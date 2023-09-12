@@ -95,7 +95,7 @@
     "uuid": "^9.0.0"
   },
   "devDependencies": {
-    "@octokit/rest": "^20.0.1",
+    "@octokit/rest": "^19.0.13",
     "@types/debug": "^4.1.8",
     "@types/jest": "^29.5.4",
     "@types/node": "^20.5.7",

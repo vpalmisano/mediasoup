@@ -273,14 +273,7 @@ namespace RTC
 					return;
 				}
 
-				const bool wasActive = IsActive();
-
-				this->paused = true;
-
-				MS_DEBUG_DEV("Consumer paused [consumerId:%s]", this->id.c_str());
-
-				if (wasActive)
-					UserOnPaused();
+				this->Pause();
 
 				request->Accept();
 
@@ -296,12 +289,7 @@ namespace RTC
 					return;
 				}
 
-				this->paused = false;
-
-				MS_DEBUG_DEV("Consumer resumed [consumerId:%s]", this->id.c_str());
-
-				if (IsActive())
-					UserOnResumed();
+				this->Resume();
 
 				request->Accept();
 
@@ -373,6 +361,42 @@ namespace RTC
 				MS_THROW_ERROR("unknown method '%s'", request->method.c_str());
 			}
 		}
+	}
+
+	void Consumer::Pause()
+	{
+		MS_TRACE();
+
+		if (this->paused)
+		{
+			return;
+		}
+
+		bool wasActive = IsActive();
+
+		this->paused = true;
+
+		MS_DEBUG_DEV("Consumer paused [consumerId:%s]", this->id.c_str());
+
+		if (wasActive)
+			UserOnPaused();
+	}
+
+	void Consumer::Resume()
+	{
+		MS_TRACE();
+
+		if (!this->paused)
+		{
+			return;
+		}
+
+		this->paused = false;
+
+		MS_DEBUG_DEV("Consumer resumed [consumerId:%s]", this->id.c_str());
+
+		if (IsActive())
+			UserOnResumed();
 	}
 
 	void Consumer::TransportConnected()

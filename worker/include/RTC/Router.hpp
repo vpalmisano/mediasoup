@@ -56,6 +56,9 @@ namespace RTC
 		void SetNewRtpObserverIdFromData(json& data, std::string& rtpObserverId) const;
 		RTC::RtpObserver* GetRtpObserverFromData(json& data) const;
 
+		void OnTransportConsumerChangeProducer(
+		  RTC::Transport* transport, RTC::Consumer* consumer, RTC::Producer* producer);
+
 		/* Pure virtual methods inherited from RTC::Transport::Listener. */
 	public:
 		void OnTransportNewProducer(RTC::Transport* transport, RTC::Producer* producer) override;
@@ -132,6 +135,8 @@ namespace RTC
 		  mapDataProducerDataConsumers;
 		absl::flat_hash_map<RTC::DataConsumer*, RTC::DataProducer*> mapDataConsumerDataProducer;
 		absl::flat_hash_map<std::string, RTC::DataProducer*> mapDataProducers;
+
+		absl::flat_hash_set<RTC::Consumer*> audioConsumers;
 	};
 } // namespace RTC
 

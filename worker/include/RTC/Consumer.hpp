@@ -120,6 +120,8 @@ namespace RTC
 		}
 		void TransportConnected();
 		void TransportDisconnected();
+		void Pause();
+		void Resume();
 		bool IsPaused() const
 		{
 			return this->paused;
@@ -177,7 +179,8 @@ namespace RTC
 	public:
 		// Passed by argument.
 		const std::string id;
-		const std::string producerId;
+		std::string producerId;
+		uint64_t lastProducerChange{0};
 
 	protected:
 		// Passed by argument.

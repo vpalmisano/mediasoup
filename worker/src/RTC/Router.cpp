@@ -711,6 +711,30 @@ namespace RTC
 
 		packet->logger.routerId = this->id;
 
+		//
+		if (producer->GetKind() == RTC::Media::Kind::AUDIO) {
+			uint8_t volume = 0;
+			bool voice = false;
+
+			packet->ReadSsrcAudioLevel(volume, voice);
+
+			if (!this->audioConsumers.empty() && voice) {
+				uint64_t now = DepLibUV::GetTimeMs();
+
+				for (auto* consumer : this->audioConsumers)
+				{
+					if (consumer->producerId != producer->id && now - consumer->lastProducerChange > 200) {
+						MS_WARN_TAG(
+							rtp,
+							"Changing producer for consumer [producerId:%s consumerId:%s] [volume:%d voice:%d]",
+							producer->id.c_str(), consumer->id.c_str(), volume, voice);
+						this->OnTransportConsumerChangeProducer(NULL, consumer, producer);
+						consumer->lastProducerChange = now;
+					}
+				}
+			}
+		}
+
 		auto& consumers = this->mapProducerConsumers.at(producer);
 
 		if (!consumers.empty())
@@ -781,6 +805,10 @@ namespace RTC
 		  this->mapConsumerProducer.find(consumer) == this->mapConsumerProducer.end(),
 		  "Consumer already present in mapConsumerProducer");
 
+		if (consumer->GetKind() == RTC::Media::Kind::AUDIO) {
+			this->audioConsumers.insert(consumer);
+		}
+
 		// Update the Consumer status based on the Producer status.
 		if (producer->IsPaused())
 			consumer->ProducerPaused();
@@ -802,6 +830,102 @@ namespace RTC
 
 		// Provide the Consumer with the scores of all streams in the Producer.
 		consumer->ProducerRtpStreamScores(producer->GetRtpStreamScores());
+	}
+
+	inline void Router::OnTransportConsumerChangeProducer(
+	  RTC::Transport* /*transport*/, RTC::Consumer* consumer, RTC::Producer* producer)
+	{
+		MS_TRACE();
+
+		MS_ASSERT(
+		  consumer->GetType() == RTC::RtpParameters::Type::SIMPLE,
+		  "Invalid consumer type [consumerId:%s type:%s]",
+		  consumer->id.c_str(),
+		  RTC::RtpParameters::GetTypeString(consumer->GetType()).c_str())
+
+		consumer->Pause();
+		/* for (const auto& stream : consumer->GetRtpStreams())
+		{
+			stream->Pause();
+		} */
+
+		// Remove current producer.
+		auto mapCurrentProducersIt = this->mapProducers.find(consumer->producerId);
+		if (mapCurrentProducersIt == this->mapProducers.end())
+			MS_THROW_ERROR("Current Producer not found [producerId:%s]", consumer->producerId.c_str());
+
+		auto* currentProducer              = mapCurrentProducersIt->second;
+		auto mapCurrentProducerConsumersIt = this->mapProducerConsumers.find(currentProducer);
+
+		MS_ASSERT(
+		  mapCurrentProducerConsumersIt != this->mapProducerConsumers.end(),
+		  "Current Producer not present in mapProducerConsumers [producerId: %s]",
+		  consumer->producerId.c_str());
+
+		// Remove the Consumer from the current consumers map.
+		auto& currentConsumers          = mapCurrentProducerConsumersIt->second;
+		auto currentConsumersConsumerIt = currentConsumers.find(consumer);
+
+		if (currentConsumersConsumerIt != currentConsumers.end())
+		{
+			currentConsumers.erase(currentConsumersConsumerIt);
+		}
+		else
+		{
+			MS_WARN_TAG(
+			  rtp, "Consumer not present in current consumers list [consumerId:%s]", consumer->id.c_str());
+		}
+
+		// Add new producer
+		auto mapProducerConsumersIt = this->mapProducerConsumers.find(producer);
+
+		MS_ASSERT(
+		  mapProducerConsumersIt != this->mapProducerConsumers.end(),
+		  "Producer not present in mapProducerConsumers [producerId:%s]",
+		  producer->id.c_str());
+
+		consumer->producerId = producer->id;
+
+		// Update the Consumer status based on the Producer status.
+		if (producer->IsPaused()) {
+			consumer->ProducerPaused();
+		} else {
+			consumer->Resume();
+		}
+
+		// Insert the Consumer in the maps.
+		auto& consumers = mapProducerConsumersIt->second;
+
+		auto consumersConsumerIt = consumers.find(consumer);
+		if (consumersConsumerIt == consumers.end())
+		{
+			consumers.insert(consumer);
+		}
+		else
+		{
+			MS_WARN_TAG(
+			  rtp, "consumer already present in consumers list [consumerId:%s]", consumer->id.c_str());
+		}
+
+		this->mapConsumerProducer[consumer] = producer;
+
+		// Get all streams in the Producer and provide the Consumer with them.
+		for (const auto& kv : producer->GetRtpStreams())
+		{
+			auto* rtpStream     = kv.first;
+			uint32_t mappedSsrc = kv.second;
+
+			consumer->ProducerRtpStream(rtpStream, mappedSsrc);
+		}
+
+		// Provide the Consumer with the scores of all streams in the Producer.
+		consumer->ProducerRtpStreamScores(producer->GetRtpStreamScores());
+
+		//consumer->Resume();
+		/* for (const auto& stream : consumer->GetRtpStreams())
+		{
+			stream->Resume();
+		} */
 	}
 
 	inline void Router::OnTransportConsumerClosed(RTC::Transport* /*transport*/, RTC::Consumer* consumer)
@@ -833,6 +957,10 @@ namespace RTC
 
 		// Remove the Consumer from the map.
 		this->mapConsumerProducer.erase(mapConsumerProducerIt);
+
+		if (consumer->GetKind() == RTC::Media::Kind::AUDIO) {
+			this->audioConsumers.erase(consumer);
+		}
 	}
 
 	inline void Router::OnTransportConsumerProducerClosed(
